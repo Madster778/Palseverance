@@ -1,36 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
 const ShopScreen = ({ navigation }) => {
-  const currency = 1000; // Replace with actual currency data
+  const currency = 1000; // Placeholder currency value
 
-  // Example initial state for each shop category and their items
   const [shopCategories, setShopCategories] = useState({
     backgroundColour: [
       { id: 1, owned: false, equipped: false },
       { id: 2, owned: true, equipped: false },
-      { id: 3, owned: true, equipped: false }
+      { id: 3, owned: true, equipped: false },
     ],
     petColour: [
       { id: 1, owned: false, equipped: false },
       { id: 2, owned: false, equipped: false },
-      { id: 3, owned: false, equipped: false }
+      { id: 3, owned: false, equipped: false },
     ],
     glasses: [
       { id: 1, owned: false, equipped: false },
       { id: 2, owned: false, equipped: false },
-      { id: 3, owned: false, equipped: false }
-    ]
+      { id: 3, owned: false, equipped: false },
+    ],
   });
 
-  // Update state when buying, equipping, or unequipping an item
   const updateItemState = (category, id, newState) => {
-    // Example logic to update item state
-    // You'll need to implement the actual logic based on your app's requirements
+    // Update item state logic goes here
   };
 
-  // Render each shop category with its items
   const ShopCategory = ({ title, items }) => (
     <View style={styles.shopCategory}>
       <Text style={styles.categoryTitle}>{title}</Text>
@@ -40,11 +36,9 @@ const ShopScreen = ({ navigation }) => {
             <View style={styles.placeholderImage}></View>
             <TouchableOpacity
               style={styles.button}
-              onPress={() => updateItemState(title, item.id, {})} // Pass the appropriate new state
+              onPress={() => updateItemState(title, item.id, {})} // Update with correct state
             >
-              <Text style={styles.buttonText}>
-                {item.equipped ? 'Unequip' : item.owned ? 'Equip' : 'Buy'}
-              </Text>
+              <Text style={styles.buttonText}>{item.equipped ? 'Unequip' : item.owned ? 'Equip' : 'Buy'}</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -54,7 +48,7 @@ const ShopScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Shop</Text>
         <Text style={styles.currencyDisplay}>Currency: {currency}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
@@ -62,10 +56,12 @@ const ShopScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Render each category */}
-      {Object.keys(shopCategories).map((key) => (
-        <ShopCategory key={key} title={key} items={shopCategories[key]} />
-      ))}
+      {/* Additional top spacing for categories */}
+      <View style={{ marginTop: 20 }}>
+        {Object.keys(shopCategories).map((key) => (
+          <ShopCategory key={key} title={key} items={shopCategories[key]} />
+        ))}
+      </View>
     </SafeAreaView>
   );
 };
@@ -91,13 +87,11 @@ const styles = StyleSheet.create({
   currencyDisplay: {
     fontSize: 18,
     position: 'absolute',
-    alignSelf: 'center',
     right: 0,
     left: 0,
     textAlign: 'center',
   },
   closeButton: {
-    padding: 10,
     position: 'absolute',
     right: 16,
   },

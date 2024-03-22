@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
 const ProfileScreen = ({ navigation }) => {
-  // Placeholder data, replace with actual data as needed
   const userData = {
     firstName: 'John',
     lastName: 'Doe',
@@ -16,15 +15,13 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header at the top */}
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
           <AntDesign name="close" size={24} color="black" />
         </TouchableOpacity>
       </View>
 
-      {/* Profile content */}
       <View style={styles.profileContent}>
         <Image 
           source={require('../assets/images/default-pet.png')} // Replace with your image path
@@ -44,7 +41,7 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start', // Aligns content to the top
+    justifyContent: 'flex-start',
   },
   header: {
     flexDirection: 'row',
@@ -53,7 +50,7 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd', // You can change the color as per your design
+    borderBottomColor: '#ddd',
   },
   headerTitle: {
     fontSize: 26,
@@ -67,7 +64,7 @@ const styles = StyleSheet.create({
   },
   profileContent: {
     flex: 1,
-    justifyContent: 'center', // Centers content vertically in the remaining space
+    justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
   },

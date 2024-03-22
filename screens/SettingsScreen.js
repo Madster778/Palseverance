@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
 const SettingsScreen = ({ navigation }) => {
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [petName, setPetName] = useState('');
 
-  const handleUpdatePassword = () => {
-    // Add logic to update the password
-    console.log('Update password');
+  const handleUpdatePetName = () => {
+    console.log('Pet name updated to:', petName);
+    // Add your logic here to update the pet name
   };
 
   const handleSignOut = () => {
-    // Add logic for signing out
     console.log('Sign out logic goes here');
-    // Navigate to the Login screen
     navigation.navigate('Login');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
           <AntDesign name="close" size={24} color="black" />
@@ -42,21 +39,13 @@ const SettingsScreen = ({ navigation }) => {
 
         <TextInput 
           style={styles.input} 
-          placeholder="New Password" 
-          secureTextEntry
-          value={newPassword} 
-          onChangeText={setNewPassword} 
-        />
-        <TextInput 
-          style={styles.input} 
-          placeholder="Confirm New Password" 
-          secureTextEntry
-          value={confirmNewPassword} 
-          onChangeText={setConfirmNewPassword} 
+          placeholder="Change Pet Name" 
+          value={petName} 
+          onChangeText={setPetName} 
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleUpdatePassword}>
-          <Text style={styles.buttonText}>Update Password</Text>
+        <TouchableOpacity style={styles.button} onPress={handleUpdatePetName}>
+          <Text style={styles.buttonText}>Update Name</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={() => {}}>

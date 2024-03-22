@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const HabitsScreen = ({ navigation }) => {
@@ -53,30 +53,32 @@ const HabitsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Habits</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <MaterialCommunityIcons name="close" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={habits}
-        renderItem={renderHabitItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-      />
-      <View style={styles.addNewHabitContainer}>
-        <TextInput
-          placeholder="Enter new habit"
-          value={newHabitName}
-          onChangeText={(text) => setNewHabitName(text)}
-          style={styles.newHabitInput}
-          autoCorrect={false}
+      <KeyboardAvoidingView behavior={Platform.OS === "android" ? null : "padding"} style={{ flex: 1 }}>
+        <View style={[styles.header, { marginTop: StatusBar.currentHeight || 0 }]}>
+          <Text style={styles.headerTitle}>Habits</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+            <MaterialCommunityIcons name="close" size={24} color="black" />
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={habits}
+          renderItem={renderHabitItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
         />
-        <TouchableOpacity style={styles.addButton} onPress={addNewHabit}>
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.addNewHabitContainer}>
+          <TextInput
+            placeholder="Enter new habit"
+            value={newHabitName}
+            onChangeText={(text) => setNewHabitName(text)}
+            style={styles.newHabitInput}
+            autoCorrect={false}
+          />
+          <TouchableOpacity style={styles.addButton} onPress={addNewHabit}>
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -99,9 +101,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
-  closeButton: {
-    // Style as needed
-  },
+  closeButton: {},
   habitItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    backgroundColor: '#f0f0f0', // Slight background color to highlight touchable area
+    backgroundColor: '#f0f0f0',
   },
   habitName: {
     fontSize: 18,
@@ -127,15 +127,17 @@ const styles = StyleSheet.create({
     borderTopColor: '#ddd',
     paddingHorizontal: 16,
     paddingVertical: 20,
-    backgroundColor: '#fff', // Ensures the input field is distinguishable
+    flexDirection: 'row', // Ensure TextInput and Button are in the same row
+    justifyContent: 'space-between', // This keeps the text input and button adequately spaced
+    alignItems: 'center', // Align items vertically
   },
   newHabitInput: {
-    flex: 1,
     borderColor: '#ccc',
     borderWidth: 1,
     padding: 10,
     marginRight: 8,
     borderRadius: 5,
+    flex: 1, // Allows text input to expand and fill available space
   },
   addButton: {
     backgroundColor: '#4CAF50',
@@ -148,9 +150,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    paddingBottom: 10,
-    paddingTop: 20, // This ensures there's a gap between the header and the first habit
+    paddingBottom: 60, // Increase bottom padding to ensure list content does not overlap with the input field and button
+    paddingTop: 20, // Ensures there's a gap between the header and the first habit
   },
 });
 
 export default HabitsScreen;
+

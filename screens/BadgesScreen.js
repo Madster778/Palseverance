@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
 const badges = new Array(12).fill(null).map((_, index) => ({
@@ -17,9 +17,12 @@ const BadgeItem = ({ label }) => (
 );
 
 const BadgesScreen = ({ navigation }) => {
+  // Use StatusBar height to adjust top padding for Android devices
+  const topPadding = StatusBar.currentHeight || 0;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { paddingBottom: 20 }]}>
+      <View style={[styles.header, { marginTop: topPadding }]}>
         <Text style={styles.headerTitle}>Badges</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
           <AntDesign name="close" size={24} color="black" />
@@ -32,7 +35,7 @@ const BadgesScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         numColumns={3}
         columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContentContainer} // Added style for content container
+        contentContainerStyle={styles.listContentContainer}
       />
     </SafeAreaView>
   );
@@ -45,7 +48,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
@@ -54,14 +57,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    flex: 1,
   },
-  closeButton: {
-    position: 'absolute',
-    right: 16,
-  },
+  closeButton: {},
   listContentContainer: {
-    paddingTop: 20, // Adds padding at the top of the list
+    paddingTop: 20,
   },
   badgeItem: {
     alignItems: 'center',

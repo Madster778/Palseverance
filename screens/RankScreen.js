@@ -1,13 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
 const RankScreen = ({ navigation }) => {
-  // Mock data for ranking list
   const rankingData = [
     { id: '1', name: 'Yourself', rank: 1 },
     { id: '2', name: 'Friend 1', rank: 2 },
-    // ... more friends
+    // Include more friends as needed
   ];
 
   const RankItem = ({ rank, name }) => (
@@ -19,20 +18,18 @@ const RankScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header at the top */}
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Rank</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
           <AntDesign name="close" size={24} color="black" />
         </TouchableOpacity>
       </View>
 
-      {/* FlatList with added top margin */}
       <FlatList
         data={rankingData}
         renderItem={({ item }) => <RankItem rank={item.rank} name={item.name} />}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContentContainer} // Style added here
+        contentContainerStyle={styles.listContentContainer}
       />
     </SafeAreaView>
   );
@@ -57,10 +54,10 @@ const styles = StyleSheet.create({
   closeButton: {
     position: 'absolute',
     right: 10,
-    padding: 10, // For larger touch area
+    padding: 10,
   },
   listContentContainer: {
-    paddingTop: 20, // Adjust the top margin as needed
+    paddingTop: 20,
   },
   rankItem: {
     flexDirection: 'row',

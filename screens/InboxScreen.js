@@ -1,24 +1,23 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
 const InboxScreen = ({ navigation }) => {
-  // Mock data for friends list
   const friends = [
     { id: '1', name: 'Friend 1' },
     { id: '2', name: 'Friend 2' },
-    // ... more friends
+    // Add more friends as needed
   ];
 
   const messageFriend = (friendName) => {
-    // Placeholder for navigation function - replace with your actual navigation logic
     console.log(`Navigate to messaging screen with: ${friendName}`);
+    // Implement your navigation logic here
     // navigation.navigate('MessagingScreen', { friendName });
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Inbox</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
           <AntDesign name="close" size={24} color="black" />
@@ -101,7 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   listContentContainer: {
-    paddingTop: 20, // Adjust this value for spacing between header and first item
+    paddingTop: 20, // This ensures there's a gap between the header and the first item.
   },
 });
 
