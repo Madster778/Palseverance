@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
+import { auth } from '../firebaseConfig'; // Assuming firebaseConfig.js is in the parent directory of your screens
+import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 
 function LoginScreen({ navigation }) {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
@@ -10,9 +12,20 @@ function LoginScreen({ navigation }) {
 
   React.useEffect(() => {
     if (response?.type === 'success') {
-      const { authentication } = response;
-      // Here you would typically navigate to your app's main screen and pass along the authentication token
-      navigation.navigate('Home');
+      const { id_token } = response.params;
+
+      // Create a Google credential with the token
+      const googleCredential = GoogleAuthProvider.credential(id_token);
+
+      // Sign-in the user with the credential
+      signInWithCredential(auth, googleCredential).then(() => {
+        // Here you would typically navigate to your app's main screen
+        // The user is now signed in to Firebase, and you can access their account via the auth.currentUser object
+        navigation.navigate('Home');
+      }).catch((error) => {
+        // Handle errors here
+        console.error(error);
+      });
     }
   }, [response]);
 
