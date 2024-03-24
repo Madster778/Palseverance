@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import * as Google from 'expo-google-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
 
 function LoginScreen({ navigation }) {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: '792104178872-0b2b2v0jmtksfoj22p1tlh7nvstme1ov.apps.googleusercontent.com',
+    clientId: '792104178872-ojeuu42fdqp8ql8ejv8dnt0cr90d3be1.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
   });
 
