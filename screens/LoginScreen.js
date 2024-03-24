@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import * as Google from 'expo-google-auth-session';
 
 function LoginScreen({ navigation }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: '792104178872-0b2b2v0jmtksfoj22p1tlh7nvstme1ov.apps.googleusercontent.com',
+    scopes: ['profile', 'email'],
+  });
+
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      // Here you would typically navigate to your app's main screen and pass along the authentication token
+      navigation.navigate('Home');
+    }
+  }, [response]);
 
   return (
     <View style={styles.container}>
@@ -13,21 +24,14 @@ function LoginScreen({ navigation }) {
         resizeMode="contain" // This ensures the entire logo is visible, scaled to fit
       />
       <View style={styles.loginBox}>
-        <TextInput
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Password"
-          value={password}
-          secureTextEntry
-          onChangeText={setPassword}
-          style={styles.input}
-        />
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.button}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity
+          onPress={() => {
+            promptAsync();
+          }}
+          style={styles.button}
+          disabled={!request}
+        >
+          <Text style={styles.buttonText}>Login with Google</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.signUpLink}>
           <Text style={styles.signUpText}>Don't Have Account? Sign Up Now</Text>
@@ -45,8 +49,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   logo: {
-    width: 500/2, // Adjust width as needed
-    height: 342/2, // Adjust height as needed; maintain aspect ratio
+    width: 500 / 2, // Adjust width as needed
+    height: 342 / 2, // Adjust height as needed; maintain aspect ratio
     marginBottom: 20,
   },
   title: {
@@ -57,14 +61,6 @@ const styles = StyleSheet.create({
   loginBox: {
     width: '80%',
     alignItems: 'center',
-  },
-  input: {
-    width: '100%',
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
   },
   button: {
     backgroundColor: '#007bff',
