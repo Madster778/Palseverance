@@ -1,20 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
+import { auth, db } from '../firebase/firebaseConfig';
+import { signOut } from 'firebase/auth';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
 const SettingsScreen = ({ navigation }) => {
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [petName, setPetName] = useState('');
+  const [username, setUsername] = useState(''); // State for username change
 
-  const handleUpdatePetName = () => {
-    console.log('Pet name updated to:', petName);
-    // Add your logic here to update the pet name
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'Users', user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setUsername(userData.username); // Set initial username
+          setPetName(userData.petName); // Set initial pet name
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleUpdateUsername = async () => {
+    console.log('Username updated to:', username);
+    // Add your logic here to update the username
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(db, 'Users', user.uid);
+      await updateDoc(userDocRef, {
+        username: username,
+        petName: petName, // Update pet name at the same time if changed
+      });
+      console.log("User and pet name updated");
+    }
   };
 
+  // Existing handleUpdatePetName function can remain as is, or you can merge it with handleUpdateUsername
+
   const handleSignOut = () => {
-    console.log('Sign out logic goes here');
-    navigation.navigate('Login');
+    signOut(auth).then(() => {
+      console.log('User signed out');
+      navigation.replace('Login'); // Replace with your login screen route name
+    }).catch((error) => {
+      console.error('Sign out error:', error);
+    });
   };
 
   return (
@@ -44,12 +81,15 @@ const SettingsScreen = ({ navigation }) => {
           onChangeText={setPetName} 
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleUpdatePetName}>
-          <Text style={styles.buttonText}>Update Name</Text>
-        </TouchableOpacity>
+        <TextInput 
+          style={styles.input} 
+          placeholder="Change Username" 
+          value={username} 
+          onChangeText={setUsername} 
+        />
 
-        <TouchableOpacity style={styles.button} onPress={() => {}}>
-          <Text style={styles.buttonText}>Credits</Text>
+        <TouchableOpacity style={styles.button} onPress={handleUpdateUsername}>
+          <Text style={styles.buttonText}>Update Profile</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleSignOut}>

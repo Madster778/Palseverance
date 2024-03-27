@@ -24,7 +24,7 @@ const ProfileScreen = ({ navigation }) => {
 
       <View style={styles.profileContent}>
         <Image 
-          source={require('../assets/images/default-pet.png')} // Replace with your image path
+          source={require('../assets/images/default-happy-pet.png')} // Replace with your image path
           style={styles.petImage}
         />
         <Text style={styles.infoText}>{`${userData.firstName} ${userData.lastName}`}</Text>
