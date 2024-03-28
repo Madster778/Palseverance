@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
 import petImages from '../utils/petImages';
 
@@ -11,24 +11,28 @@ function HomeScreen({ navigation }) {
   const [petName, setPetName] = useState("Loading...");
   const [happinessLevel, setHappinessLevel] = useState(100);
   const [petColor, setPetColor] = useState('default');
+  const [backgroundColour, setBackgroundColour] = useState('grey'); // Default background color
+  const [hasGlasses, setHasGlasses] = useState(false);
+  const [buttonsPressed, setButtonsPressed] = useState({});
+
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = doc(db, 'Users', user.uid);
-        const docSnap = await getDoc(userDocRef);
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(db, 'Users', user.uid);
+      const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data();
           setUsername(userData.username || `${userData.firstName} ${userData.lastName}`);
-          setPetName(userData.petName);
+          setPetName(userData.petName || "Pal");
           setHappinessLevel(userData.happinessMeter || 100);
-          setPetColor(userData.equippedItems?.petColour || 'default');
+          setPetColor(userData.equippedItems?.petColour || 'white');
+          setBackgroundColour(userData.equippedItems?.backgroundColour || 'grey');
+          setHasGlasses(userData.equippedItems?.glasses || false);
         }
-      }
-    };
-
-    fetchUserData();
+      });
+      return () => unsubscribe();
+    }
   }, []);
 
   const getPetMood = () => {
@@ -51,15 +55,8 @@ function HomeScreen({ navigation }) {
   const petImageKey = `${petColor}${petMood.charAt(0).toUpperCase() + petMood.slice(1)}`;
   const petImageSrc = petImages[petImageKey];
 
-  // Adjusted for slight extension beyond the pet
-  const petImageHeight = 350; // Example height, adjust as needed
-  const extraLength = 20; // Extra length to extend beyond the pet
-  const containerHeight = Dimensions.get('window').height; // Get screen height
-  const barHeight = ((happinessLevel / 100) * (petImageHeight + extraLength)); // Calculate bar height based on happiness level + extra length
-  const barTopPosition = (containerHeight / 2) - (petImageHeight / 2); // Top position of the bar aligning with pet's top
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, {backgroundColor: backgroundColour}]}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.username}>{username}</Text>
@@ -70,23 +67,33 @@ function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.petSection}>
-        <Image source={petImageSrc} style={[styles.petImage, {height: petImageHeight}]} />
+        <View style={styles.petImageContainer}>
+          <Image source={petImageSrc} style={styles.petImage} />
+          {hasGlasses && <Image source={petImages.glassesOverlay} style={styles.glassesImage} />}
+        </View>
         <Text style={styles.petName}>{petName}</Text>
-        <View style={[
-          styles.happinessBar,
-          {
-            backgroundColor: getPetMoodColor(),
-            height: barHeight,
-            top: barTopPosition + petImageHeight - barHeight - 24, // Adjust for pet name alignment, with extra length
-          }
-        ]} />
+        <View style={styles.happinessBarBorder}>
+          <View style={styles.happinessBarBackground}>
+            <View style={[
+              styles.happinessBar,
+                {
+                  backgroundColor: getPetMoodColor(),
+                  height: `${happinessLevel}%`,
+                  position: 'absolute',
+                  bottom: 0, // This ensures the bar grows upwards from the bottom
+                }
+              ]} />
+            </View>
+        </View>
       </View>
 
       <View style={styles.buttonContainer}>
-        {['Habits', 'Badges', 'Shop', 'Inbox', 'Rank'].map((screen) => (
+        {['Habits', 'Badges', 'Shop', 'Inbox', 'Rank'].map((screen, index) => (
           <TouchableOpacity
-            key={screen}
-            style={styles.navButton}
+            key={screen} // Assuming 'screen' is unique for each button
+            style={[styles.navButton, buttonsPressed[screen] ? styles.navButtonPressed : {}]}
+            onPressIn={() => setButtonsPressed(prevState => ({ ...prevState, [screen]: true }))}
+            onPressOut={() => setButtonsPressed(prevState => ({ ...prevState, [screen]: false }))}
             onPress={() => navigation.navigate(screen)}
           >
             <Text style={styles.navButtonText}>{screen}</Text>
@@ -100,46 +107,76 @@ function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-    justifyContent: 'space-between', // Ensures the content is spaced out to fill the screen
+    justifyContent: 'space-between',
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
+    paddingTop: 1,
   },
   username: {
-    fontSize: 30,
+    fontSize: 35, // Increased size
     fontWeight: 'bold',
   },
   petSection: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
-  happinessBar: {
-    position: 'absolute',
-    left: 10,
-    width: 20,
-    bottom: 0, // Adjust if necessary
+  petImageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   petImage: {
-    width: 300, // Adjust as necessary
+    width: 350,
+    height: 450,
     resizeMode: 'contain',
+    marginLeft: 20,
+  },
+  glassesImage: {
+    position: 'absolute',
+    width: 400, // Adjust as necessary
+    height: 350,
+    resizeMode: 'contain',
+    right: -25, // Move to the right side
+    bottom: 60,
+    marginTop: 10,
   },
   petName: {
-    marginTop: 10,
-    fontSize: 24,
+    fontSize: 50, // Increased font size for pet name
+    fontWeight: 'bold',
+    marginTop: -20,
+    textAlign: 'center',
+    marginLeft: 20,
+  },
+  happinessBarBorder: {
+    position: 'absolute',
+    left: 15,
+    bottom: 100,
+    height: 500,
+    width: 30,
+    borderColor: 'black',
+    borderWidth: 4,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  happinessBarBackground: {
+    backgroundColor: 'white', // This ensures the background is white
+    width: '100%',
+    height: '100%', // This fills the entire border
+  },
+  happinessBar: {
+    width: '100%',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingBottom: 20, // Ensure buttons are pushed to the bottom
+    paddingBottom: 20,
   },
   navButton: {
-    backgroundColor: '#DDD',
+    backgroundColor: 'black', // Changed to black
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
@@ -147,9 +184,13 @@ const styles = StyleSheet.create({
     height: 75,
     width: 75,
   },
+  navButtonPressed: {
+    backgroundColor: '#333', // Darker shade for pressed state
+  },
   navButtonText: {
     fontSize: 15,
     fontWeight: 'bold',
+    color: 'white', // Text color changed to white
   },
 });
 

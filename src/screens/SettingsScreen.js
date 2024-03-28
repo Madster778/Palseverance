@@ -1,61 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { auth, db } from '../firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 const SettingsScreen = ({ navigation }) => {
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [petName, setPetName] = useState('');
-  const [username, setUsername] = useState(''); // State for username change
+  const [newUsername, setNewUsername] = useState('');
+  const [newPetName, setNewPetName] = useState('');
+  const [currentUsername, setCurrentUsername] = useState('');
+  const [currentPetName, setCurrentPetName] = useState('');
+  const [backgroundColour, setBackgroundColour] = useState('white'); // For background color updates
 
-  // Fetch user data on component mount
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = doc(db, 'Users', user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setUsername(userData.username); // Set initial username
-          setPetName(userData.petName); // Set initial pet name
-        }
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const handleUpdateUsername = async () => {
-    console.log('Username updated to:', username);
-    // Add your logic here to update the username
     const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(db, 'Users', user.uid);
-      await updateDoc(userDocRef, {
-        username: username,
-        petName: petName, // Update pet name at the same time if changed
+      const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setCurrentUsername(userData.username);
+          setCurrentPetName(userData.petName);
+          setMusicEnabled(userData.settings?.musicEnabled || false);
+          setSoundEnabled(userData.settings?.soundEnabled || false);
+          setBackgroundColour(userData.equippedItems?.backgroundColour || 'white'); // Listen for real-time updates
+        }
       });
-      console.log("User and pet name updated");
+      return () => unsubscribe();
+    }
+  }, []);
+
+  const handleUpdateField = async (field, newValue, currentValue) => {
+    if (newValue.trim() === '') {
+      Alert.alert("Invalid Input", "Name cannot be blank.");
+      return;
+    }
+    if (newValue === currentValue) {
+      Alert.alert("Invalid Input", "Name cannot be the same.");
+      return;
+    }
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(db, 'Users', user.uid);
+      await updateDoc(userDocRef, { [field]: newValue });
+      if (field === 'username') {
+        setCurrentUsername(newValue);
+        Alert.alert("Update Successful", "Your username has been updated.");
+      } else if (field === 'petName') {
+        setCurrentPetName(newValue);
+        Alert.alert("Update Successful", "Your pet name has been updated.");
+      }
     }
   };
 
-  // Existing handleUpdatePetName function can remain as is, or you can merge it with handleUpdateUsername
+  const handleToggleSetting = async (setting, value) => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(db, 'Users', user.uid);
+      await updateDoc(userDocRef, { [`settings.${setting}`]: value });
+    }
+  };
 
-  const handleSignOut = () => {
-    signOut(auth).then(() => {
-      console.log('User signed out');
-      navigation.replace('Login'); // Replace with your login screen route name
-    }).catch((error) => {
-      console.error('Sign out error:', error);
-    });
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      navigation.replace('Login');
+    } catch (error) {
+      Alert.alert("Sign Out Error", error.message);
+    }
+  };
+
+  const handleShowCredits = () => {
+    Alert.alert("Credits", "App created by Your Name. Icons provided by Icon Provider.");
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: backgroundColour }]}>
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
@@ -65,31 +87,51 @@ const SettingsScreen = ({ navigation }) => {
 
       <View style={styles.content}>
         <View style={styles.switchContainer}>
-          <Text style={styles.label}>Music</Text>
-          <Switch value={musicEnabled} onValueChange={setMusicEnabled} />
+          <Text style={styles.labelBold}>Music</Text>
+          <Switch
+            value={musicEnabled}
+            onValueChange={(value) => {
+              setMusicEnabled(value);
+              handleToggleSetting('musicEnabled', value);
+            }}
+            trackColor={{ false: "#ff0000", true: "#00ff00" }} // Red for false, green for true
+          />
         </View>
 
         <View style={styles.switchContainer}>
-          <Text style={styles.label}>Sound</Text>
-          <Switch value={soundEnabled} onValueChange={setSoundEnabled} />
+          <Text style={styles.labelBold}>Sound Effects</Text>
+          <Switch
+            value={soundEnabled}
+            onValueChange={(value) => {
+              setSoundEnabled(value);
+              handleToggleSetting('soundEnabled', value);
+            }}
+            trackColor={{ false: "#ff0000", true: "#00ff00" }} // Red for false, green for true
+          />
         </View>
 
-        <TextInput 
-          style={styles.input} 
-          placeholder="Change Pet Name" 
-          value={petName} 
-          onChangeText={setPetName} 
+        <TextInput
+          style={styles.input}
+          placeholder="New Username"
+          value={newUsername}
+          onChangeText={setNewUsername}
         />
+        <TouchableOpacity style={styles.button} onPress={() => handleUpdateField('username', newUsername, currentUsername)}>
+          <Text style={styles.buttonText}>Update Username</Text>
+        </TouchableOpacity>
 
-        <TextInput 
-          style={styles.input} 
-          placeholder="Change Username" 
-          value={username} 
-          onChangeText={setUsername} 
+        <TextInput
+          style={styles.input}
+          placeholder="New Pet Name"
+          value={newPetName}
+          onChangeText={setNewPetName}
         />
+        <TouchableOpacity style={styles.button} onPress={() => handleUpdateField('petName', newPetName, currentPetName)}>
+          <Text style={styles.buttonText}>Update Pet Name</Text>
+        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleUpdateUsername}>
-          <Text style={styles.buttonText}>Update Profile</Text>
+        <TouchableOpacity style={styles.button} onPress={handleShowCredits}>
+          <Text style={styles.buttonText}>Credits</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleSignOut}>
@@ -133,8 +175,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  label: {
-    fontSize: 18,
+  labelBold: {
+    fontSize: 20, // Slightly bigger text size
+    fontWeight: 'bold', // Bold text
   },
   input: {
     fontSize: 16,
@@ -143,7 +186,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#e7e7e7',
+    backgroundColor: '#000', // Black background
     paddingVertical: 10,
     alignItems: 'center',
     borderRadius: 5,
@@ -151,7 +194,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 18,
-    color: 'black',
+    fontWeight: 'bold',
+    color: '#FFF', // White text
   },
 });
 

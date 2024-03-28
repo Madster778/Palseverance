@@ -40,8 +40,8 @@ function LoginScreen({ navigation }) {
                 glasses: false,
               },
               settings: {
-                music: true,
-                soundEffects: true,
+                musicEnabled: true,
+                soundEnabled: true,
               },
             });
           }

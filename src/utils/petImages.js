@@ -1,6 +1,3 @@
-// Assuming your images are stored in the 'assets/images' directory,
-// adjust the paths according to your actual project structure.
-
 const petImages = {
   defaultHappy: require('../assets/images/default-happy-pet.png'),
   defaultSad: require('../assets/images/default-sad-pet.png'),
