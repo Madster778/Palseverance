@@ -181,9 +181,13 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
-    borderBottomWidth: 1,
+    borderWidth: 1, // Add a subtle border
+    borderColor: '#ddd', // A neutral border color
+    backgroundColor: 'rgba(255,255,255,0.9)', // Slightly transparent white background
+    color: '#000', // Dark text for contrast
     padding: 10,
     marginBottom: 20,
+    borderRadius: 5, // Soften the input corners
   },
   button: {
     backgroundColor: '#000', // Black background
