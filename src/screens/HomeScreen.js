@@ -61,8 +61,8 @@ function HomeScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.username}>{username}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <MaterialIcons name="settings" size={30} color="black" />
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.closeButton}>
+          <MaterialIcons name="settings" size={40} color="#ff6f00" />
         </TouchableOpacity>
       </View>
 
@@ -117,8 +117,9 @@ const styles = StyleSheet.create({
     paddingTop: 1,
   },
   username: {
-    fontSize: 35, // Increased size
+    fontSize: 40,
     fontWeight: 'bold',
+    color: '#ff6f00', // Change text color to #ff6f00
   },
   petSection: {
     flex: 1,
@@ -145,10 +146,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   petName: {
-    fontSize: 50, // Increased font size for pet name
+    fontSize: 40,
     fontWeight: 'bold',
     marginTop: -20,
     textAlign: 'center',
+    color: '#ff6f00', // Change text color to #ff6f00
     marginLeft: 20,
   },
   happinessBarBorder: {
@@ -176,7 +178,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   navButton: {
-    backgroundColor: 'black', // Changed to black
+    backgroundColor: '#ff6f00', // Change background color to #ff6f00
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
@@ -185,12 +187,12 @@ const styles = StyleSheet.create({
     width: 75,
   },
   navButtonPressed: {
-    backgroundColor: '#333', // Darker shade for pressed state
+    backgroundColor: '#e65c00', // A darker shade when button is pressed
   },
   navButtonText: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: 'white', // Text color changed to white
+    color: 'white', // Keep text color white
   },
 });
 

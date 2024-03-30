@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
-import { doc, onSnapshot, collection, addDoc, orderBy, query } from 'firebase/firestore';
+import { doc, onSnapshot, collection, addDoc, deleteDoc, orderBy, query, runTransaction } from 'firebase/firestore';
 
 
 const HabitsScreen = ({ navigation }) => {
@@ -53,21 +53,51 @@ const HabitsScreen = ({ navigation }) => {
   };
 
   // Prompt for habit completion
-  const confirmHabitCompletion = (habitId) => {
+  const confirmHabitCompletion = async (habit) => {
+    const now = new Date();
+    const lastUpdated = habit.lastUpdated.toDate(); // Assuming lastUpdated is a Firestore Timestamp
+    const diffDays = Math.floor((now - lastUpdated) / (1000 * 60 * 60 * 24));
+  
+    if (habit.status === "complete" && diffDays < 1) {
+      Alert.alert("Habit already completed today");
+      return;
+    }
+  
+    // Continue with prompting for completion
     Alert.alert(
       'Complete Habit',
       'Did you complete this habit today?',
       [
-        { text: 'Not Yet' },
-        { text: 'Yes', onPress: () => completeHabit(habitId) },
+        { text: 'Not Yet' }, // This option effectively does nothing but close the alert
+        { text: 'Yes', onPress: () => completeHabit(habit.id) },
       ]
     );
   };
-
+  
   // Complete a habit
   const completeHabit = async (habitId) => {
-    // Additional logic to update the habit status, streak, and potentially update pet happiness
-    console.log(`Habit ${habitId} completed today!`); // Placeholder for your logic
+    const userRef = doc(db, "Users", auth.currentUser.uid);
+    const habitRef = doc(db, "Users", auth.currentUser.uid, "Habits", habitId);
+  
+    try {
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        const habitDoc = await transaction.get(habitRef);
+        if (!habitDoc.exists()) {
+          console.error("Document does not exist!");
+          return;
+        }
+        const newStreak = habitDoc.data().streak + 1;
+        const newCurrency = userDoc.data().currency + 10 * newStreak; // Adjust currency increment as needed
+        const newHappiness = Math.min(userDoc.data().happinessMeter + 5, 100); // Increment happiness by 5, capped at 100
+  
+        transaction.update(habitRef, { streak: newStreak, status: "complete", lastUpdated: new Date() });
+        transaction.update(userRef, { currency: newCurrency, happinessMeter: newHappiness });
+      });
+      console.log("Habit completed successfully");
+    } catch (e) {
+      console.error("Transaction failed: ", e);
+    }
   };
 
   // Delete a habit from Firestore
@@ -103,7 +133,7 @@ const HabitsScreen = ({ navigation }) => {
             <Text style={styles.currencyText}>{`${currency} Coins`}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <MaterialCommunityIcons name="close" size={24} color="black" />
+            <MaterialCommunityIcons name="close" size={24} color="#ff6f00" />
           </TouchableOpacity>
         </View>
         <FlatList
@@ -136,7 +166,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between', // Ensures items are spaced out to the container's edges
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -146,15 +176,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
+    color: '#ff6f00', // Change text color to white
   },
   currencyContainer: {
     position: 'absolute',
-    width: '100%', // Take up the full container width
-    alignItems: 'center', // Center content horizontally
+    left: 0,
+    right: 0,
+    alignItems: 'center', // Centers the currency text horizontally
+    zIndex: -1, // Ensures this doesn't interfere with button presses
   },
   currencyText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#ff6f00', // Currency text color
   },
   habitItem: {
     flexDirection: 'row',
@@ -167,11 +201,11 @@ const styles = StyleSheet.create({
   },
   habitName: {
     fontSize: 18,
-    color: 'white',
+    color: 'white', // Update text color
     flex: 1,
   },
   habitStreak: {
-    color: 'white',
+    color: '#ff6f00', // Update text color
     marginRight: 10,
     fontSize: 16,
   },
@@ -188,13 +222,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newHabitInput: {
-    backgroundColor: '#FFFFFF', // Keep input background white
-    borderColor: '#ccc',
+    backgroundColor: 'rgba(255,255,255,0.8)', // Match Settings screen input background
+    borderColor: '#ff6f00',
     borderWidth: 1,
     padding: 10,
     marginRight: 8,
     borderRadius: 5,
     flex: 1,
+    color: '#ff6f00', // Set text input color to match
   },
   addButton: {
     backgroundColor: '#ff6f00', // Button color

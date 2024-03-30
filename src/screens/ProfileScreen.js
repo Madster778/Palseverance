@@ -40,7 +40,7 @@ const ProfileScreen = ({ navigation }) => {
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>{`${userData.username}'s Profile`}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <MaterialIcons name="close" size={24} color="black" />
+          <MaterialIcons name="close" size={24} color="#ff6f00" />
         </TouchableOpacity>
       </View>
 
@@ -77,14 +77,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
   },
   headerTitle: {
-    fontSize: 24, // Increased font size
+    fontSize: 24,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+    color: '#ff6f00', // Change text color to white
   },
   closeButton: {
     position: 'absolute',
     right: 10,
+    color: '#ff6f00', // Consider changing the icon color if necessary
   },
   profileContent: {
     flex: 1,
@@ -112,10 +114,10 @@ const styles = StyleSheet.create({
     left: -30, // Adjust as needed
   },
   infoText: {
-    fontSize: 22, // Increased font size
-    fontWeight: 'bold', // Make text bold
+    fontSize: 22,
+    fontWeight: 'bold',
     marginVertical: 10,
-    color: 'black',
+    color: '#ff6f00', // Change text color to white
   },
 });
 

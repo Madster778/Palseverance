@@ -81,7 +81,7 @@ const SettingsScreen = ({ navigation }) => {
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <AntDesign name="close" size={24} color="black" />
+          <AntDesign name="close" size={24} color="#ff6f00" />
         </TouchableOpacity>
       </View>
 
@@ -145,6 +145,7 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    // No changes needed here since background color changes dynamically
   },
   header: {
     flexDirection: 'row',
@@ -152,17 +153,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#ddd', // Consider changing if needed to suit new color scheme
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+    color: '#ff6f00', // Change text color to white
   },
   closeButton: {
     position: 'absolute',
     right: 10,
+    // The close button color is controlled by the AntDesign icon color attribute below
   },
   content: {
     flex: 1,
@@ -176,21 +179,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   labelBold: {
-    fontSize: 20, // Slightly bigger text size
-    fontWeight: 'bold', // Bold text
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ff6f00', // Change text color to white
   },
   input: {
     fontSize: 16,
-    borderWidth: 1, // Add a subtle border
-    borderColor: '#ddd', // A neutral border color
-    backgroundColor: 'rgba(255,255,255,0.9)', // Slightly transparent white background
-    color: '#000', // Dark text for contrast
+    borderWidth: 1,
+    borderColor: '#ff6f00', // Consider changing if needed
+    backgroundColor: 'rgba(255,255,255, 0.9)', // Adjust transparency as desired
+    color: '#ff6f00', // Change text color to white for visibility on light backgrounds
     padding: 10,
     marginBottom: 20,
-    borderRadius: 5, // Soften the input corners
+    borderRadius: 5,
   },
   button: {
-    backgroundColor: '#000', // Black background
+    backgroundColor: '#ff6f00', // Change button background color
     paddingVertical: 10,
     alignItems: 'center',
     borderRadius: 5,
@@ -199,7 +203,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFF', // White text
+    color: 'white', // Ensure text color is white
   },
 });
 

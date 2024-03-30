@@ -34,7 +34,7 @@ function LoginScreen({ navigation }) {
               badges: [],
               ownedItems: [],
               equippedItems: {
-                backgroundColour: 'grey',
+                backgroundColour: 'lightgrey',
                 petColour: 'white',
                 glasses: false,
               },
