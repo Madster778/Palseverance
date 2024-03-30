@@ -30,7 +30,9 @@ const ProfileScreen = ({ navigation }) => {
   }
 
   // Select pet image based on equipped color and add default fallback
-  const petColorKey = userData.equippedItems?.petColour ? `${userData.equippedItems.petColour}Happy` : 'defaultHappy';
+  const petColorKey = userData.equippedItems?.petColour
+    ? `${userData.equippedItems.petColour}Happy`
+    : 'whiteHappy'; // This should match the 'happy' key for a white pet in your petImages.js
   const petImageSrc = petImages[petColorKey];
 
   return (

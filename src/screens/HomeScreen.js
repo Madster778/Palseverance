@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -10,8 +10,8 @@ function HomeScreen({ navigation }) {
   const [username, setUsername] = useState("Loading...");
   const [petName, setPetName] = useState("Loading...");
   const [happinessLevel, setHappinessLevel] = useState(100);
-  const [petColor, setPetColor] = useState('default');
-  const [backgroundColour, setBackgroundColour] = useState('grey'); // Default background color
+  const [petColor, setPetColor] = useState('white');
+  const [backgroundColour, setBackgroundColour] = useState('grey');
   const [hasGlasses, setHasGlasses] = useState(false);
   const [buttonsPressed, setButtonsPressed] = useState({});
 
@@ -23,12 +23,12 @@ function HomeScreen({ navigation }) {
       const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          setUsername(userData.username || `${userData.firstName} ${userData.lastName}`);
-          setPetName(userData.petName || "Pal");
-          setHappinessLevel(userData.happinessMeter || 100);
-          setPetColor(userData.equippedItems?.petColour || 'white');
-          setBackgroundColour(userData.equippedItems?.backgroundColour || 'grey');
-          setHasGlasses(userData.equippedItems?.glasses || false);
+          setUsername(userData.username); // Assuming username is always set
+          setPetName(userData.petName); // Assuming petName is always set
+          setHappinessLevel(userData.happinessMeter); // Assuming happinessMeter is always set
+          setPetColor(userData.equippedItems?.petColour);
+          setBackgroundColour(userData.equippedItems?.backgroundColour);
+          setHasGlasses(userData.equippedItems?.glasses);
         }
       });
       return () => unsubscribe();

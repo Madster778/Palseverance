@@ -1,61 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { db, auth } from '../firebase/firebaseConfig';
+import { doc, onSnapshot, collection, addDoc, orderBy, query } from 'firebase/firestore';
+
 
 const HabitsScreen = ({ navigation }) => {
-  const [habits, setHabits] = useState([
-    { id: '1', name: 'Habit 1', streak: 3 },
-    { id: '2', name: 'Habit 2', streak: 7 },
-    { id: '3', name: 'Habit 3', streak: 8 },
-  ]);
+  const [habits, setHabits] = useState([]);
   const [newHabitName, setNewHabitName] = useState('');
+  const [currency, setCurrency] = useState(0);
+  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF'); // Default white background
 
-  const addNewHabit = () => {
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      const userRef = doc(db, "Users", user.uid);
+      onSnapshot(userRef, (doc) => {
+        const userData = doc.data();
+        setCurrency(userData.currency);
+        setBackgroundColor(userData.equippedItems?.backgroundColour || '#FFFFFF');
+      });
+  
+      // Create a query that orders habits by createdAt in ascending order
+      const habitsQuery = query(collection(db, "Users", user.uid, "Habits"), orderBy("createdAt", "asc"));
+      const unsubscribe = onSnapshot(habitsQuery, (snapshot) => {
+        const loadedHabits = [];
+        snapshot.forEach((doc) => loadedHabits.push({ id: doc.id, ...doc.data() }));
+        setHabits(loadedHabits);
+      });
+      return () => unsubscribe();
+    }
+  }, []);
+  
+  const addNewHabit = async () => {
     if (newHabitName.trim() === '') {
       Alert.alert('Error', 'Please enter a habit name');
       return;
     }
-    const newId = habits.length > 0 ? String(Math.max(...habits.map(h => parseInt(h.id))) + 1) : '1';
-    setHabits(currentHabits => [
-      ...currentHabits,
-      { id: newId, name: newHabitName, streak: 0 },
-    ]);
-    setNewHabitName('');
+    try {
+      await addDoc(collection(db, "Users", auth.currentUser.uid, "Habits"), {
+        name: newHabitName,
+        streak: 0,
+        status: "pending",
+        lastUpdated: new Date(), // You already have this
+        createdAt: new Date(), // Add this for sorting
+      });
+      setNewHabitName('');
+    } catch (error) {
+      console.error("Error adding habit: ", error);
+      Alert.alert("Error", "Failed to add habit");
+    }
   };
 
-  const confirmHabitCompletion = (id) => {
+  // Prompt for habit completion
+  const confirmHabitCompletion = (habitId) => {
     Alert.alert(
       'Complete Habit',
       'Did you complete this habit today?',
       [
-        { text: 'No' },
-        { text: 'Yes', onPress: () => console.log(`Habit ${id} completed today!`) },
+        { text: 'Not Yet' },
+        { text: 'Yes', onPress: () => completeHabit(habitId) },
       ]
     );
   };
 
-  const deleteHabit = (id) => {
+  // Complete a habit
+  const completeHabit = async (habitId) => {
+    // Additional logic to update the habit status, streak, and potentially update pet happiness
+    console.log(`Habit ${habitId} completed today!`); // Placeholder for your logic
+  };
+
+  // Delete a habit from Firestore
+  const deleteHabit = async (habitId) => {
     Alert.alert('Delete Habit', 'Are you sure you want to delete this habit?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => setHabits(currentHabits => currentHabits.filter(habit => habit.id !== id)) },
+      {
+        text: 'Delete',
+        onPress: async () => {
+          await deleteDoc(doc(db, "Users", auth.currentUser.uid, "Habits", habitId));
+        },
+      },
     ]);
   };
 
+  // Render each habit item
   const renderHabitItem = ({ item }) => (
     <TouchableOpacity style={styles.habitItem} onPress={() => confirmHabitCompletion(item.id)}>
       <Text style={styles.habitName}>{item.name}</Text>
       <Text style={styles.habitStreak}>{`${item.streak} days`}</Text>
       <TouchableOpacity style={styles.habitDelete} onPress={() => deleteHabit(item.id)}>
-        <MaterialCommunityIcons name="minus-circle-outline" size={24} color="black" />
+        <MaterialCommunityIcons name="minus-circle-outline" size={24} color="white" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "android" ? null : "padding"} style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.container, {backgroundColor: backgroundColor}]}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <View style={[styles.header, { marginTop: StatusBar.currentHeight || 0 }]}>
           <Text style={styles.headerTitle}>Habits</Text>
+          <View style={styles.currencyContainer}>
+            <Text style={styles.currencyText}>{`${currency} Coins`}</Text>
+          </View>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
             <MaterialCommunityIcons name="close" size={24} color="black" />
           </TouchableOpacity>
@@ -63,14 +109,15 @@ const HabitsScreen = ({ navigation }) => {
         <FlatList
           data={habits}
           renderItem={renderHabitItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
         />
         <View style={styles.addNewHabitContainer}>
           <TextInput
             placeholder="Enter new habit"
+            placeholderTextColor="#000" // Ensure placeholder text is legible
             value={newHabitName}
-            onChangeText={(text) => setNewHabitName(text)}
+            onChangeText={setNewHabitName}
             style={styles.newHabitInput}
             autoCorrect={false}
           />
@@ -86,7 +133,6 @@ const HabitsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -101,21 +147,31 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
-  closeButton: {},
+  currencyContainer: {
+    position: 'absolute',
+    width: '100%', // Take up the full container width
+    alignItems: 'center', // Center content horizontally
+  },
+  currencyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   habitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#f0f0f0',
+    marginVertical: 5,
+    backgroundColor: '#ff6f00',
+    borderRadius: 10,
   },
   habitName: {
     fontSize: 18,
+    color: 'white',
     flex: 1,
   },
   habitStreak: {
+    color: 'white',
     marginRight: 10,
     fontSize: 16,
   },
@@ -127,26 +183,27 @@ const styles = StyleSheet.create({
     borderTopColor: '#ddd',
     paddingHorizontal: 16,
     paddingVertical: 20,
-    flexDirection: 'row', // Ensure TextInput and Button are in the same row
-    justifyContent: 'space-between', // This keeps the text input and button adequately spaced
-    alignItems: 'center', // Align items vertically
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   newHabitInput: {
+    backgroundColor: '#FFFFFF', // Keep input background white
     borderColor: '#ccc',
     borderWidth: 1,
     padding: 10,
     marginRight: 8,
     borderRadius: 5,
-    flex: 1, // Allows text input to expand and fill available space
+    flex: 1,
   },
   addButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#ff6f00', // Button color
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
   },
   addButtonText: {
-    color: '#fff',
+    color: 'white',
     fontSize: 16,
   },
   listContent: {
@@ -156,4 +213,3 @@ const styles = StyleSheet.create({
 });
 
 export default HabitsScreen;
-
