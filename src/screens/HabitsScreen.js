@@ -135,7 +135,7 @@ const HabitsScreen = ({ navigation }) => {
         <View style={[styles.header, { marginTop: StatusBar.currentHeight || 0 }]}>
           <Text style={styles.headerTitle}>Habits</Text>
           <View style={styles.currencyContainer}>
-            <Text style={styles.currencyText}>{`${currency} Coins`}</Text>
+            <Text style={styles.currencyText}>{`Currency: ${currency} `}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
             <MaterialCommunityIcons name="close" size={24} color="#ff6f00" />
@@ -150,7 +150,7 @@ const HabitsScreen = ({ navigation }) => {
         <View style={styles.addNewHabitContainer}>
           <TextInput
             placeholder="Enter new habit"
-            placeholderTextColor="#000" // Ensure placeholder text is legible
+            placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
             value={newHabitName}
             onChangeText={setNewHabitName}
             style={styles.newHabitInput}
@@ -227,9 +227,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newHabitInput: {
-    backgroundColor: 'rgba(255,255,255,0.8)', // Match Settings screen input background
-    borderColor: '#ff6f00',
+     // Match Settings screen input background
+    fontSize: 16,
     borderWidth: 1,
+    borderColor: '#ff6f00',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     padding: 10,
     marginRight: 8,
     borderRadius: 5,

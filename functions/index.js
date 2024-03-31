@@ -5,7 +5,7 @@ admin.initializeApp();
 // Import logger for logging messages
 const logger = require("firebase-functions/logger");
 
-exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 12 * * *')
+exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
   .timeZone('Europe/London')
   .onRun(async () => {
     const usersSnapshot = await admin.firestore().collection('Users').get();

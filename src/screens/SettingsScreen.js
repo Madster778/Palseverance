@@ -113,6 +113,7 @@ const SettingsScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="New Username"
+          placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
           value={newUsername}
           onChangeText={setNewUsername}
         />
@@ -123,6 +124,7 @@ const SettingsScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="New Pet Name"
+          placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
           value={newPetName}
           onChangeText={setNewPetName}
         />
