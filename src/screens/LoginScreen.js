@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, ActivityIndicator } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -9,15 +9,16 @@ function LoginScreen({ navigation }) {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: '792104178872-ojeuu42fdqp8ql8ejv8dnt0cr90d3be1.apps.googleusercontent.com',
   });
+  const [isLoading, setIsLoading] = useState(false); // Loading state to manage button interaction
 
   React.useEffect(() => {
     if (response?.type === 'success') {
+      setIsLoading(true); // Start loading
       const { id_token } = response.params;
       const googleCredential = GoogleAuthProvider.credential(id_token);
 
       signInWithCredential(auth, googleCredential)
         .then(async (authResult) => {
-          // Check for the user's data in Firestore and create it if it doesn't exist
           const userRef = doc(db, 'Users', authResult.user.uid);
           const userSnap = await getDoc(userRef);
 
@@ -44,28 +45,37 @@ function LoginScreen({ navigation }) {
               },
             });
           }
-
+          setIsLoading(false); // End loading
           navigation.replace('Home');
         })
-        .catch(error => console.error(error));
+        .catch(error => {
+          console.error(error);
+          setIsLoading(false); // End loading on error
+        });
     }
   }, [response, navigation]);
 
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/images/palseverance-logo.png')} // Replace with the actual path to your logo
+        source={require('../assets/images/palseverance-logo.png')} // Replace with your actual logo path
         style={styles.logo}
         resizeMode="contain"
       />
       <Text style={styles.tagline}>Tracking Habits with Purr-fection!</Text>
-      <TouchableOpacity
-        onPress={() => promptAsync()}
-        style={styles.button}
-        disabled={!request}
-      >
-        <Text style={styles.buttonText}>Sign in with Google</Text>
-      </TouchableOpacity>
+      {isLoading ? (
+        <ActivityIndicator size="large" color="#ff6f00" />
+      ) : (
+        <TouchableOpacity
+          onPress={() => {
+            if (!isLoading) promptAsync();
+          }}
+          style={styles.button}
+          disabled={!request || isLoading}
+        >
+          <Text style={styles.buttonText}>Sign in with Google</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

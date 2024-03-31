@@ -4,12 +4,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, onSnapshot, collection, addDoc, deleteDoc, orderBy, query, runTransaction } from 'firebase/firestore';
 
-
 const HabitsScreen = ({ navigation }) => {
   const [habits, setHabits] = useState([]);
   const [newHabitName, setNewHabitName] = useState('');
   const [currency, setCurrency] = useState(0);
-  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF'); // Default white background
+  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); // Default white background
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -18,10 +17,9 @@ const HabitsScreen = ({ navigation }) => {
       onSnapshot(userRef, (doc) => {
         const userData = doc.data();
         setCurrency(userData.currency);
-        setBackgroundColor(userData.equippedItems?.backgroundColour || '#FFFFFF');
+        setBackgroundColor(userData.equippedItems?.backgroundColour);
       });
   
-      // Create a query that orders habits by createdAt in ascending order
       const habitsQuery = query(collection(db, "Users", user.uid, "Habits"), orderBy("createdAt", "asc"));
       const unsubscribe = onSnapshot(habitsQuery, (snapshot) => {
         const loadedHabits = [];
@@ -31,7 +29,7 @@ const HabitsScreen = ({ navigation }) => {
       return () => unsubscribe();
     }
   }, []);
-  
+
   const addNewHabit = async () => {
     if (newHabitName.trim() === '') {
       Alert.alert('Error', 'Please enter a habit name');
@@ -42,8 +40,8 @@ const HabitsScreen = ({ navigation }) => {
         name: newHabitName,
         streak: 0,
         status: "pending",
-        lastUpdated: new Date(), // You already have this
-        createdAt: new Date(), // Add this for sorting
+        lastUpdated: new Date(),
+        createdAt: new Date(),
       });
       setNewHabitName('');
     } catch (error) {
@@ -54,8 +52,15 @@ const HabitsScreen = ({ navigation }) => {
 
   // Prompt for habit completion
   const confirmHabitCompletion = async (habit) => {
+    // Ensure habit is defined and has a lastUpdated field
+    if (!habit || !habit.lastUpdated) {
+      console.error("No lastUpdated field for habit:", habit);
+      Alert.alert("Error", "Habit data is incomplete.");
+      return;
+    }
+  
     const now = new Date();
-    const lastUpdated = habit.lastUpdated.toDate(); // Assuming lastUpdated is a Firestore Timestamp
+    const lastUpdated = habit.lastUpdated.toDate(); // Convert Firestore Timestamp to JavaScript Date
     const diffDays = Math.floor((now - lastUpdated) / (1000 * 60 * 60 * 24));
   
     if (habit.status === "complete" && diffDays < 1) {
@@ -63,17 +68,17 @@ const HabitsScreen = ({ navigation }) => {
       return;
     }
   
-    // Continue with prompting for completion
     Alert.alert(
       'Complete Habit',
       'Did you complete this habit today?',
       [
-        { text: 'Not Yet' }, // This option effectively does nothing but close the alert
+        { text: 'Not Yet' },
         { text: 'Yes', onPress: () => completeHabit(habit.id) },
       ]
     );
   };
   
+
   // Complete a habit
   const completeHabit = async (habitId) => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
@@ -115,7 +120,7 @@ const HabitsScreen = ({ navigation }) => {
 
   // Render each habit item
   const renderHabitItem = ({ item }) => (
-    <TouchableOpacity style={styles.habitItem} onPress={() => confirmHabitCompletion(item.id)}>
+    <TouchableOpacity style={styles.habitItem} onPress={() => confirmHabitCompletion(item)}>
       <Text style={styles.habitName}>{item.name}</Text>
       <Text style={styles.habitStreak}>{`${item.streak} days`}</Text>
       <TouchableOpacity style={styles.habitDelete} onPress={() => deleteHabit(item.id)}>
@@ -205,7 +210,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   habitStreak: {
-    color: '#ff6f00', // Update text color
+    color: 'white', // Update text color
     marginRight: 10,
     fontSize: 16,
   },
