@@ -8,6 +8,7 @@ const ShopScreen = ({ navigation }) => {
   const [shopItems, setShopItems] = useState([]);
   const [userData, setUserData] = useState({ currency: 0, ownedItems: [], equippedItems: {} });
 
+  // Function to fetch user data
   const fetchUserData = async () => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const docSnap = await getDoc(userRef);
@@ -21,117 +22,140 @@ const ShopScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchShopItems = async () => {
       const querySnapshot = await getDocs(collection(db, "ShopItems"));
-      const itemsByCategory = { backgroundColour: [], petColour: [], glasses: [] };
+      const itemsByType = {};
       querySnapshot.forEach((doc) => {
-        const item = { id: doc.id, ...doc.data() };
-        if (itemsByCategory[item.type]) {
-          itemsByCategory[item.type].push(item);
-        }
+          const item = { id: doc.id, ...doc.data() };
+          if (!itemsByType[item.type]) {
+              itemsByType[item.type] = [];
+          }
+          itemsByType[item.type].push(item);
       });
-      setShopItems(itemsByCategory);
-    };
+      setShopItems(itemsByType);
+  };
   
     fetchShopItems();
     fetchUserData();
   }, []);
-  
+
+  const formatCategoryName = (name) => {
+    const formatted = name.replace(/([A-Z])/g, ' $1'); // Inserts a space before capital letters
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1); // Capitalizes the first letter
+  };
 
   const handleBuyOrEquip = async (item) => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const isOwned = userData.ownedItems.includes(item.id);
-    let updateObject = {};
-  
+
     if (!isOwned && userData.currency >= item.cost) {
-      // Buying the item
-      updateObject.currency = userData.currency - item.cost;
-      updateObject.ownedItems = arrayUnion(item.id);
-      Alert.alert("Purchase successful!");
-    } else {
-      // Check if the item is of type 'backgroundColour' and use colourCode
-      if (item.type === 'backgroundColour') {
-        const isEquipped = userData.equippedItems.backgroundColour === item.colourCode;
-        updateObject['equippedItems.backgroundColour'] = isOwned && !isEquipped ? item.colourCode : 'lightgrey';
-      } else if (item.type === 'petColour') {
-        const isEquipped = userData.equippedItems.petColour === item.name;
-        updateObject['equippedItems.petColour'] = isOwned && !isEquipped ? item.name : 'white';
-      } else if (item.type === 'glasses') {
-        updateObject['equippedItems.glasses'] = !userData.equippedItems.glasses;
+        // Buying the item
+        await updateDoc(userRef, {
+            currency: userData.currency - item.cost,
+            ownedItems: arrayUnion(item.id),
+        });
+        Alert.alert("Purchase successful!");
+    } else if (isOwned) {
+        let updateObject = {};
+        const isEquipped = item.type === 'glasses' ? userData.equippedItems.glasses : userData.equippedItems[item.type] === (item.type === 'backgroundColour' ? item.colourCode : item.name);
+
+        if (item.type === 'glasses') {
+            updateObject = {'equippedItems.glasses': !userData.equippedItems.glasses};
+        } else if (item.type === 'backgroundColour' && isEquipped) {
+            // Setting default background colour when unequipping
+            updateObject = {'equippedItems.backgroundColour': 'lightgrey'};
+        } else if (item.type === 'petColour' && isEquipped) {
+            // Setting default pet colour when unequipping
+            updateObject = {'equippedItems.petColour': 'white'};
+        } else if (isEquipped) {
+            // Unequipping non-color items
+            updateObject = {[`equippedItems.${item.type}`]: 'none'};
+        } else {
+            // Equipping items
+            updateObject = {[`equippedItems.${item.type}`]: item.type === 'backgroundColour' ? item.colourCode : item.name};
+        }
+
+        await updateDoc(userRef, updateObject);
       }
-    }
-  
-    await updateDoc(userRef, updateObject);
-    // After updating Firestore, fetch user data again to update local state
-    fetchUserData().catch(console.error);
+    await fetchUserData(); // Refresh user data
   };
-
-
+  
   const renderItem = ({ item }) => {
     const isOwned = userData.ownedItems.includes(item.id);
     let isEquipped;
-    
-    // Check the equipped state based on the item type
-    if (item.type === 'glasses') {
-      isEquipped = userData.equippedItems.glasses;
-    } else if (item.type === 'backgroundColour') {
-      isEquipped = userData.equippedItems.backgroundColour === item.colourCode;
-    } else if (item.type === 'petColour') {
-      isEquipped = userData.equippedItems.petColour === item.name;
-    }
 
+    if (item.type === 'glasses') {
+        isEquipped = userData.equippedItems.glasses;
+    } else {
+        isEquipped = userData.equippedItems[item.type] === (item.type === 'backgroundColour' ? item.colourCode : item.name);
+    }
+    
     let iconComponent = <View />;
     switch (item.type) {
       case 'petColour':
+        const color = item.name === 'ginger' ? 'orange' : item.name;
+        iconComponent = (
+        <FontAwesome 
+          name="paint-brush" 
+          size={24} 
+          color={color} // Use specific colors based on the item name
+          />
+        );
+        break;
       case 'backgroundColour':
-        iconComponent = <FontAwesome name="paint-brush" size={24} color={item.colourCode || 'black'} />;
+        iconComponent = (
+        <FontAwesome 
+          name="paint-brush" 
+          size={24} 
+          color={item.colourCode || 'black'} // This will use the color from the item object
+          />
+        );
         break;
       case 'glasses':
-        iconComponent = <Image source={require('../assets/images/glasses-overlay.png')} style={styles.icon} />;
-        break;
+          iconComponent = <Image source={require('../assets/images/glasses-overlay.png')} style={styles.icon} />;
+          break;
       default:
         break;
     }
-
+    
     return (
       <View style={styles.item}>
-        {iconComponent}
-        <Text style={styles.itemName}>{item.name}</Text>
-        <TouchableOpacity
-          style={[
-            styles.button, 
-            isOwned ? (isEquipped ? styles.buttonEquipped : styles.buttonOwned) : styles.buttonBuy
-          ]}
-          onPress={() => handleBuyOrEquip(item)}
-        >
-          <Text style={styles.buttonText}>
-            {isEquipped ? 'Unequip' : isOwned ? 'Equip' : `Buy (${item.cost})`}
-          </Text>
-        </TouchableOpacity>
+          {iconComponent}
+          <Text style={styles.itemName}>{item.name}</Text>
+          <TouchableOpacity
+              style={[
+                  styles.button, 
+                  isOwned ? (isEquipped ? styles.buttonEquipped : styles.buttonOwned) : styles.buttonBuy
+              ]}
+              onPress={() => handleBuyOrEquip(item)}
+          >
+              <Text style={styles.buttonText}>
+                  {isEquipped ? 'Unequip' : isOwned ? 'Equip' : `Buy (${item.cost})`}
+              </Text>
+          </TouchableOpacity>
       </View>
     );
   };
-
+  
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: userData.equippedItems.backgroundColour || '#FFFFFF' }]}>
-      <StatusBar backgroundColor={userData.equippedItems.backgroundColour || '#FFFFFF'} barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Shop</Text>
-        <Text style={styles.currencyText}>Currency: {userData.currency}</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <AntDesign name="close" size={24} color="#ff6f00" />
-        </TouchableOpacity>
-      </View>
-      {Object.keys(shopItems).map((category) => (
+    <SafeAreaView style={[styles.container, {backgroundColor: userData.equippedItems.backgroundColour || 'lightgrey'}]}>
+        <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
+          <Text style={styles.headerTitle}>Shop</Text>
+          <Text style={styles.currencyText}>Currency: {userData.currency}</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+              <AntDesign name="close" size={24} color="#ff6f00" />
+          </TouchableOpacity>
+        </View>
+        {Object.keys(shopItems).map((category) => (
         <View key={category} style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>{category}</Text>
+          <Text style={styles.categoryTitle}>{formatCategoryName(category)}</Text>
           <FlatList
             data={shopItems[category]}
             renderItem={renderItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             numColumns={3}
             style={styles.list}
-          />
-        </View>
-      ))}
+            />
+          </View>
+        ))}
     </SafeAreaView>
   );
 };
@@ -205,9 +229,9 @@ const styles = StyleSheet.create({
     color: 'white', // Changes text color to white
   },
   icon: {
-    width: 60, // Adjusted icon size to create more space
-    height: 60, // Adjusted icon size
-    marginBottom: 5, // Adjusted spacing
+    width: 70, // Adjusted icon size to create more space
+    height: 70, // Adjusted icon size
+    marginBottom: 2, // Adjusted spacing
   },
   buttonOwned: {
     backgroundColor: '#4CAF50',
