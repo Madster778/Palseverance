@@ -45,14 +45,35 @@ const ShopScreen = ({ navigation }) => {
   const handleBuyOrEquip = async (item) => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const isOwned = userData.ownedItems.includes(item.id);
-
-    if (!isOwned && userData.currency >= item.cost) {
-        // Buying the item
-        await updateDoc(userRef, {
-            currency: userData.currency - item.cost,
-            ownedItems: arrayUnion(item.id),
+  
+    const confirmPurchase = () => {
+      if (userData.currency < item.cost) {
+        Alert.alert("Insufficient funds", "Keep working on your habits!");
+      } else {
+        updateDoc(userRef, {
+          currency: userData.currency - item.cost,
+          ownedItems: arrayUnion(item.id),
+        }).then(() => {
+          Alert.alert("Purchase successful", `You have purchased ${item.name}`);
+          fetchUserData();
+        }).catch(error => {
+          console.error("Purchase failed", error);
         });
-        Alert.alert("Purchase successful!");
+      }
+    };
+    if (!isOwned) {
+      // Prompt the user to confirm the purchase
+      Alert.alert(
+        "Confirm Purchase",
+        `Do you want to purchase this item?`,
+        [
+          {
+            text: "No",
+            style: "cancel"
+          },
+          { text: "Yes", onPress: confirmPurchase }
+        ]
+      );
     } else if (isOwned) {
         let updateObject = {};
         const isEquipped = item.type === 'glasses' ? userData.equippedItems.glasses : userData.equippedItems[item.type] === (item.type === 'backgroundColour' ? item.colourCode : item.name);

@@ -16,17 +16,22 @@ function LoginScreen({ navigation }) {
       setIsLoading(true); // Start loading
       const { id_token } = response.params;
       const googleCredential = GoogleAuthProvider.credential(id_token);
-
+      
       signInWithCredential(auth, googleCredential)
         .then(async (authResult) => {
           const userRef = doc(db, 'Users', authResult.user.uid);
           const userSnap = await getDoc(userRef);
-
+        
+          // Split the displayName by space. Assume first part is the first name, and the rest is the last name.
+          const nameParts = authResult.user.displayName.split(' ');
+          const firstName = nameParts[0];
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''; // Join back the rest if there are multiple parts, else set lastName to empty string
+        
           if (!userSnap.exists()) {
             await setDoc(userRef, {
-              username: authResult.user.displayName,
-              firstName: authResult.user.displayName.split(' ')[0],
-              lastName: authResult.user.displayName.split(' ')[1],
+              username: authResult.user.displayName || firstName, // Use displayName or firstName as fallback
+              firstName: firstName,
+              lastName: lastName, // This can be an empty string if lastName does not exist
               petName: 'Pal',
               currency: 0,
               highestStreak: 0,

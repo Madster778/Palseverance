@@ -38,18 +38,22 @@ const SettingsScreen = ({ navigation }) => {
       return;
     }
     if (newValue === currentValue) {
-      Alert.alert("Invalid Input", "Name cannot be the same.");
+      Alert.alert("No Change", "The new name is the same as the current name.");
+      return;
+    }
+    if (newValue.length > 15) {
+      Alert.alert("Invalid Input", "Name cannot be longer than 15 characters.");
       return;
     }
     const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(db, 'Users', user.uid);
-      await updateDoc(userDocRef, { [field]: newValue });
+      await updateDoc(userDocRef, { [field]: newValue.trim() });
       if (field === 'username') {
-        setCurrentUsername(newValue);
+        setCurrentUsername(newValue.trim());
         Alert.alert("Update Successful", "Your username has been updated.");
       } else if (field === 'petName') {
-        setCurrentPetName(newValue);
+        setCurrentPetName(newValue.trim());
         Alert.alert("Update Successful", "Your pet name has been updated.");
       }
     }
