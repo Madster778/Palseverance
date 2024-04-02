@@ -1,240 +1,198 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, Modal, Button, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, Modal, Alert, Button } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
-import { db, auth } from '../firebase/firebaseConfig';
-import { collection, query, where, getDocs, getDoc, doc, updateDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { auth, db } from '../firebase/firebaseConfig';
+import { collection, query, where, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore';
 
 const InboxScreen = ({ navigation }) => {
-  const [requestsModalVisible, setRequestsModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [username, setUsername] = useState('');
   const [incomingRequests, setIncomingRequests] = useState([]);
-  const [friends, setFriends] = useState([]);
+  const functions = getFunctions();
+  const [resolvedUsernames, setResolvedUsernames] = useState({});
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocRef = doc(db, 'Users', user.uid);
-      const unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          const userFriends = await fetchUsersByIds(userData.friends);
-          const userIncomingRequests = await fetchUsersByIds(userData.incomingRequests);
-          setFriends(userFriends);
-          setIncomingRequests(userIncomingRequests);
-        }
-      });
-      return () => unsubscribe();
-    }
+    if (!auth.currentUser) return;
+    const userRef = doc(db, "Users", auth.currentUser.uid);
+  
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      const userData = doc.data();
+      const incomingReqIds = userData.incomingRequests || [];
+  
+      // Only resolve usernames if there are any incoming requests
+      if (incomingReqIds.length > 0) {
+        resolveUsernames(incomingReqIds);
+      } else {
+        // Handle the case where there are no incoming requests, if necessary
+        setResolvedUsernames({});
+      }
+  
+      setIncomingRequests(incomingReqIds);
+    });
+  
+    return () => unsubscribe();
   }, []);
 
-  // UsernameInput component
-  const UsernameInput = ({ onSendRequest }) => {
-    const [input, setInput] = useState('');
-
-    return (
-      <View style={styles.usernameInputContainer}>
-        <TextInput
-          placeholder="Enter Username"
-          value={input}
-          onChangeText={setInput}
-          style={styles.searchInput}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity
-          onPress={() => {
-            onSendRequest(input); // Pass the inputted username
-            setInput(''); // Clear input after sending the request
-          }}
-          style={styles.sendRequestButton}
-        >
-          <Text>Send Request</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const fetchUserIdByUsername = async (username) => {
-    const usersRef = collection(db, 'Users');
-    const q = query(usersRef, where('username', '==', username));
-    const querySnapshot = await getDocs(q);
-    let userId = null;
-    querySnapshot.forEach((doc) => {
-      // Assuming that usernames are unique
-      userId = doc.id;
-    });
-    return userId; // This will return `null` if no user is found
-  };
-
-  // Function to fetch user ID by username
-  const fetchUsersByIds = async (userIds) => {
-    const users = [];
-    for (const userId of userIds) {
-      const userDocRef = doc(db, 'Users', userId);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        console.log('Fetched user data:', userDoc.data()); // Add this line to log fetched user data
-        users.push({
-          id: userDoc.id,
-          ...userDoc.data(),
-        });
-      } else {
-        console.log('No user found for ID:', userId); // Log when no user is found
-      }
-    }
-    return users;
-  };
-
-  // Function to send friend requests
-  const sendFriendRequest = async (username) => {
-    const senderId = auth.currentUser.uid;
-    const receiverUsername = username.trim();
+  const resolveUsernames = async (userIds) => {
+    const usersCollectionRef = collection(db, 'Users');
+    let newResolvedUsernames = { ...resolvedUsernames };
   
-    if (receiverUsername) {
-      // Call fetchUserIdByUsername function to get the receiverId based on receiverUsername
-      const receiverId = await fetchUserIdByUsername(receiverUsername);
-      
-      if (receiverId && receiverId !== senderId) {
-        const senderRef = doc(db, 'Users', senderId);
-        const receiverRef = doc(db, 'Users', receiverId);
-        // Update the sender's outgoing requests
-        await updateDoc(senderRef, {
-          outgoingRequests: arrayUnion(receiverId),
-        });
-        // Update the receiver's incoming requests
-        await updateDoc(receiverRef, {
-          incomingRequests: arrayUnion(senderId),
-        });
-        Alert.alert('Success', 'Friend request sent.');
-      } else if (receiverId === senderId) {
-        Alert.alert('Error', 'You cannot send a friend request to yourself.');
-      } else {
-        Alert.alert('Error', 'User not found.');
+    // Only perform the query if there's at least one userId to look up
+    if (userIds.length > 0) {
+      const userDocs = await getDocs(query(usersCollectionRef, where('__name__', 'in', userIds)));
+      userDocs.forEach((doc) => {
+        const userData = doc.data();
+        newResolvedUsernames[doc.id] = userData.username; // Assuming the field is 'username'
+      });
+  
+      setResolvedUsernames(newResolvedUsernames);
+    }
+  };  
+
+  const sendFriendRequest = async () => {
+    if (!username.trim()) {
+      Alert.alert('Invalid Input', 'Username cannot be empty.');
+      return;
+    }
+  
+    const senderUid = auth.currentUser.uid;
+  
+    try {
+      // Get the current user's data to check for existing relationships
+      const senderDoc = await getDoc(doc(db, "Users", senderUid));
+      const senderData = senderDoc.data();
+  
+      // Query for the recipient user by username
+      const querySnapshot = await getDocs(query(collection(db, "Users"), where("username", "==", username.trim())));
+      const recipientDoc = querySnapshot.docs[0];
+  
+      if (!recipientDoc) {
+        Alert.alert('Invalid Input', 'User not found.');
+        return;
       }
-    } else {
-      Alert.alert('Error', 'Username cannot be empty.');
+  
+      const recipientUid = recipientDoc.id;
+  
+      // Perform checks against the recipient UID
+      const alreadyRequested = senderData.outgoingRequests.includes(recipientUid);
+      const alreadyFriends = senderData.friends.includes(recipientUid);
+      const hasIncomingRequest = senderData.incomingRequests.includes(recipientUid);
+  
+      if (recipientUid === senderUid) {
+        Alert.alert('Invalid Input', 'You cannot send a friend request to yourself.');
+      } else if (alreadyRequested) {
+        Alert.alert('Invalid Input', 'Outgoing friend request already sent.');
+      } else if (alreadyFriends) {
+        Alert.alert('Invalid Input', 'User already added as a friend.');
+      } else if (hasIncomingRequest) {
+        Alert.alert('Invalid Input', 'User has already sent you a friend request.');
+      } else {
+        // If none of the above checks are true, send the friend request
+        const sendRequest = httpsCallable(functions, 'sendFriendRequest');
+        sendRequest({ recipientId: recipientUid })
+          .then((result) => {
+            if (result.data.success) {
+              Alert.alert('Success', 'Friend request sent.');
+            } else {
+              Alert.alert('Error', 'Could not send friend request.');
+            }
+          })
+          .catch((error) => {
+            console.error("Error sending friend request: ", error);
+            Alert.alert('Error', 'Could not send friend request.');
+          });
+      }
+    } catch (error) {
+      console.error("Error during the friend request operation: ", error);
+      Alert.alert('Error', 'An error occurred during the friend request operation.');
     }
   };
-
-  const acceptFriendRequest = async (requesterId) => {
-    const userId = auth.currentUser.uid;
-    const userRef = doc(db, 'Users', userId);
-    const requesterRef = doc(db, 'Users', requesterId);
-    await updateDoc(userRef, {
-      friends: arrayUnion(requesterId),
-      incomingRequests: arrayRemove(requesterId),
-    });
-    await updateDoc(requesterRef, {
-      friends: arrayUnion(userId),
-      outgoingRequests: arrayRemove(userId),
-    });
-    Alert.alert('Success', 'Friend request accepted.');
-    // Re-fetch friends and incoming requests here if necessary
-  };
-
-  const declineFriendRequest = async (requesterId) => {
-    const userId = auth.currentUser.uid;
-    const userRef = doc(db, 'Users', userId);
-    await updateDoc(userRef, {
-      incomingRequests: arrayRemove(requesterId),
-    });
-    // Optionally, handle the declined request on the requester's side if necessary
-    Alert.alert('Success', 'Friend request declined.');
-    // Re-fetch incoming requests here if necessary
-  };
-
-  const openFriendRequestsModal = () => {
-    setRequestsModalVisible(true);
-  };
-
-  const renderHeader = () => {
-    return (
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={openFriendRequestsModal} style={styles.viewRequestsButton}>
-          <Text>View Requests</Text>
-        </TouchableOpacity>
-        <UsernameInput onSendRequest={sendFriendRequest} />
-        <View style={{ width: 90 }} /> 
-      </View>
-    );
-  };
-
-  const renderRequestItem = ({ item }) => (
-    <View style={styles.requestItem}>
-      <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { userId: item.id })}>
-        <Text>{item.username}</Text>
-      </TouchableOpacity>
-      <View style={styles.requestActions}>
-        <Button title="Accept" onPress={() => acceptFriendRequest(item.id)} />
-        <Button title="Decline" onPress={() => declineFriendRequest(item.id)} />
-      </View>
-    </View>
-  );
   
-  // Function to render each friend item
-  const renderFriendItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.friendItem}
-      onPress={() => console.log(`Navigate to messaging screen with: ${item.name}`)}
-    >
-      <Text style={styles.friendName}>{item.name}</Text>
-    </TouchableOpacity>
-  );
 
-  
+  // Call acceptFriendRequest Cloud Function
+  const callAcceptFriendRequest = (requesterId) => {
+    const acceptRequest = httpsCallable(functions, 'acceptFriendRequest');
+    acceptRequest({ requesterId, recipientId: auth.currentUser.uid })
+    .then((result) => {
+      console.log(result.data); // Success
+    })
+    .catch((error) => {
+      console.error("Error accepting friend request: ", error.message);
+    });
+  };
+
+  // Call rejectFriendRequest Cloud Function
+  const callRejectFriendRequest = (requesterId) => {
+    const rejectRequest = httpsCallable(functions, 'rejectFriendRequest');
+    rejectRequest({ requesterId, recipientId: auth.currentUser.uid })
+      .then((result) => {
+        console.log(result.data); // Success
+      })
+      .catch((error) => {
+        console.error("Error rejecting friend request: ", error.message);
+      });
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-    >
-      <SafeAreaView style={styles.container}>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={requestsModalVisible}
-          onRequestClose={() => {
-            setRequestsModalVisible(!requestsModalVisible);
-          }}
-        >
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Friend Requests</Text>
-                <TouchableOpacity
-                  onPress={() => setRequestsModalVisible(false)}
-                  style={styles.modalCloseButton}
-                >
-                  <AntDesign name="close" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-              <FlatList
-                data={incomingRequests}
-                renderItem={renderRequestItem}
-                keyExtractor={item => item.id.toString()}
-                ListEmptyComponent={<Text>No incoming requests.</Text>}
-              />
-            </View>
-          </View>
-        </Modal>
-  
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Inbox</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <AntDesign name="close" size={24} color="black" />
-          </TouchableOpacity>
-        </View>
-    
-        {/* The FlatList for displaying friends */}
-        <FlatList
-          ListHeaderComponent={renderHeader} // This renders your search and request buttons
-          data={friends}
-          renderItem={renderFriendItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContentContainer}
-          ListFooterComponent={<View style={{ height: 20 }} />} // For spacing at the bottom
+    <SafeAreaView style={styles.container}>
+      <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
+        <Text style={styles.headerTitle}>Inbox</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+          <AntDesign name="close" size={24} color="black" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.searchContainer}>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={[styles.button, styles.viewRequestButton]}>
+          <Text style={styles.buttonText}>View Requests</Text>
+        </TouchableOpacity>
+        <TextInput 
+          placeholder="Enter Username" 
+          style={styles.searchInput} 
+          value={username}
+          onChangeText={setUsername}
         />
-      </SafeAreaView>
-    </KeyboardAvoidingView>
-  );  
+        <TouchableOpacity onPress={sendFriendRequest} style={[styles.button, styles.sendRequestButton]}>
+          <Text style={styles.buttonText}>Send Request</Text>
+        </TouchableOpacity>
+      </View>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+        transparent={true}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Incoming Requests</Text>
+            <AntDesign name="closecircleo" size={24} color="black" onPress={() => setModalVisible(false)} style={styles.modalCloseButton} />
+            {incomingRequests.length > 0 ? (
+              <FlatList
+              data={incomingRequests}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <View style={styles.friendRequestBox}>
+                  <Text style={styles.friendRequestName}>{resolvedUsernames[item]}</Text>
+                  <View style={styles.friendRequestButtons}>
+                    <TouchableOpacity onPress={() => callAcceptFriendRequest(item)} style={styles.acceptButton}>
+                      <Text style={styles.buttonText}>ACCEPT</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => callRejectFriendRequest(item)} style={styles.rejectButton}>
+                      <Text style={styles.buttonText}>DECLINE</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+              contentContainerStyle={styles.modalContentContainer}
+            />
+            ) : (
+              <Text>No incoming requests</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -243,11 +201,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingVertical: 5, // Reduced padding to bring content higher up
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // Use space-between to distribute items
+    justifyContent: 'center',
     width: '100%',
     padding: 16,
     borderBottomWidth: 1,
@@ -264,47 +220,34 @@ const styles = StyleSheet.create({
     right: 10,
     padding: 10,
   },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', // This will ensure equal spacing
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
   searchContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start', // Align to start
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  viewRequestsButton: {
-    padding: 10,
-    backgroundColor: '#ddd',
-  },
-  sendRequestButton: {
-    padding: 10,
-    backgroundColor: '#ddd',
-    position: 'absolute',
-    left: 175, // Adjust according to your layout
-  },
-  usernameInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    padding: 16,
   },
   searchInput: {
+    flex: 2,
     borderColor: '#000',
     borderWidth: 1,
     padding: 10,
-    marginRight: 9,
+    marginHorizontal: 8,
+  },
+  button: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#ff6f00',
     flex: 1,
+    marginHorizontal: 4, // Adds spacing between buttons
+    borderRadius: 5, // Rounded corners for buttons
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   friendItem: {
-    paddingVertical: 10,
+    paddingVertical: 20,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
@@ -317,53 +260,75 @@ const styles = StyleSheet.create({
   },
   centeredView: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
   },
   modalView: {
-    margin: 20,
-    backgroundColor: "white",
+    marginTop: 50, // Push down from the top
+    width: '95%', // Increase width if necessary
+    backgroundColor: 'white',
     borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2
+      height: 2,
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: '80%', // Set modal width
-  },
-  modalHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 20, // Space between title and content
   },
   modalCloseButton: {
     position: 'absolute',
-    right: 10,
+    right: 20,
+    top: 20,
   },
-  requestActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around', // Use space-around for even spacing
-    alignItems: 'center', // Align items vertically
-    padding: 10, // Add padding
+  modalContentContainer: {
+    width: '100%',
   },
-  requestItem: {
+  friendRequestBox: {
     flexDirection: 'row',
+    justifyContent: 'flex-start', // Align items to start
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 10,
-    width: '100%', // Make sure this is 100% of the modal width
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12, // Adjust padding as necessary
+    marginVertical: 8,
+    width: '100%', // Box takes the full width of the modal
+    elevation: 1,
+  },
+  friendRequestName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    maxWidth: '50%', // Set max width to accommodate the buttons
+  },
+  friendRequestButtons: {
+    flexDirection: 'row',
+    marginLeft: 'auto', // Push the buttons to the end of the container
+  },
+  acceptButton: {
+    backgroundColor: '#34C759',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12, // Reduce padding to decrease width
+    marginRight: 8, // Space between the ACCEPT and DECLINE buttons
+    minWidth: 80, // Set a minimum width for the buttons
+  },
+  rejectButton: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12, // Reduce padding to decrease width
+    minWidth: 80, // Set a minimum width for the buttons
   },
 });
 
