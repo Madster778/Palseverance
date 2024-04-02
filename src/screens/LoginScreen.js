@@ -48,6 +48,8 @@ function LoginScreen({ navigation }) {
                 musicEnabled: true,
                 soundEnabled: true,
               },
+              incomingRequests: [], // Initialize as empty array
+              outgoingRequests: [] // Initialize as empty array
             });
           }
           setIsLoading(false); // End loading
