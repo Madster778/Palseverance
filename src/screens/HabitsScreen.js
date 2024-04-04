@@ -92,18 +92,44 @@ const HabitsScreen = ({ navigation }) => {
           console.error("Document does not exist!");
           return;
         }
-        const newStreak = habitDoc.data().streak + 1;
-        const newCurrency = userDoc.data().currency + 10 * newStreak; // Adjust currency increment as needed
+        const habitData = habitDoc.data();
+        const newStreak = habitData.streak + 1;
+        const currencyIncrement = 10 * newStreak; // Assuming 10 is the currency reward for completing a habit
+        const newCurrency = userDoc.data().currency + currencyIncrement;
         const newHappiness = Math.min(userDoc.data().happinessMeter + 5, 100); // Increment happiness by 5, capped at 100
   
+        let longestCurrentStreak = userDoc.data().longestCurrentStreak || 0;
+        let totalCurrencyEarned = userDoc.data().totalCurrencyEarned || 0;
+        let longestObtainedStreak = userDoc.data().longestObtainedStreak || 0;
+  
+        totalCurrencyEarned += currencyIncrement;
+  
+        if (newStreak > longestCurrentStreak) {
+          longestCurrentStreak = newStreak;
+        }
+  
+        if (newStreak > longestObtainedStreak) {
+          longestObtainedStreak = newStreak;
+        }
+  
+        // Update the habit document with the new streak and set its status to 'complete'
         transaction.update(habitRef, { streak: newStreak, status: "complete", lastUpdated: new Date() });
-        transaction.update(userRef, { currency: newCurrency, happinessMeter: newHappiness });
+  
+        // Update the user document with the new currency, happiness, total currency earned, longest current streak, and longest obtained streak
+        transaction.update(userRef, { 
+          currency: newCurrency, 
+          happinessMeter: newHappiness,
+          totalCurrencyEarned: totalCurrencyEarned,
+          longestCurrentStreak: longestCurrentStreak,
+          longestObtainedStreak: longestObtainedStreak
+        });
       });
       console.log("Habit completed successfully");
     } catch (e) {
       console.error("Transaction failed: ", e);
     }
   };
+  
 
   // Delete a habit from Firestore
   const deleteHabit = async (habitId) => {
@@ -199,10 +225,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     marginVertical: 5,
     backgroundColor: '#ff6f00',
     borderRadius: 10,
+    alignSelf: 'center',
+    width: '90%',
   },
   habitName: {
     fontSize: 18,

@@ -1,54 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, Modal, Alert, Button } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, Modal, Alert } from 'react-native';
+import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { auth, db } from '../firebase/firebaseConfig';
-import { collection, query, where, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, onSnapshot, getDoc } from 'firebase/firestore';
 
 const InboxScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [key, setKey] = useState(0);
   const [username, setUsername] = useState('');
   const [incomingRequests, setIncomingRequests] = useState([]);
+  const [friendsList, setFriendsList] = useState([]); // State to store friends list
+  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); // Default background color
   const functions = getFunctions();
   const [resolvedUsernames, setResolvedUsernames] = useState({});
 
   useEffect(() => {
     if (!auth.currentUser) return;
-    const userRef = doc(db, "Users", auth.currentUser.uid);
-  
+    const userRef = doc(db, 'Users', auth.currentUser.uid);
+
     const unsubscribe = onSnapshot(userRef, (doc) => {
       const userData = doc.data();
+      setBackgroundColor(userData.equippedItems?.backgroundColour || 'lightgrey');
+      setFriendsList(userData.friends || []);
       const incomingReqIds = userData.incomingRequests || [];
-  
-      // Only resolve usernames if there are any incoming requests
       if (incomingReqIds.length > 0) {
         resolveUsernames(incomingReqIds);
       } else {
-        // Handle the case where there are no incoming requests, if necessary
         setResolvedUsernames({});
       }
-  
       setIncomingRequests(incomingReqIds);
     });
-  
-    return () => unsubscribe();
+
+    return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      setKey(prevKey => prevKey + 1);
+    });
+
+    return unsubscribeFocus;
+  }, [navigation]);
+
+  useEffect(() => {
+    resolveUsernames(friendsList);
+  }, [friendsList]);
 
   const resolveUsernames = async (userIds) => {
     const usersCollectionRef = collection(db, 'Users');
-    let newResolvedUsernames = { ...resolvedUsernames };
-  
-    // Only perform the query if there's at least one userId to look up
-    if (userIds.length > 0) {
-      const userDocs = await getDocs(query(usersCollectionRef, where('__name__', 'in', userIds)));
-      userDocs.forEach((doc) => {
-        const userData = doc.data();
-        newResolvedUsernames[doc.id] = userData.username; // Assuming the field is 'username'
-      });
-  
-      setResolvedUsernames(newResolvedUsernames);
+    let usernamesMap = { ...resolvedUsernames };
+    
+    for (const userId of userIds) {
+      if (!usernamesMap[userId]) {
+        const userDocSnap = await getDoc(doc(usersCollectionRef, userId));
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          usernamesMap[userId] = userData.username;
+        }
+      }
     }
-  };  
+
+    setResolvedUsernames(usernamesMap);
+  };
+
+  const navigateToProfile = (userId) => {
+    navigation.navigate('Profile', { userId });
+  };
 
   const sendFriendRequest = async () => {
     if (!username.trim()) {
@@ -134,59 +152,124 @@ const InboxScreen = ({ navigation }) => {
       });
   };
 
+  const handleRemoveFriend = (friendId) => {
+    Alert.alert(
+      'Remove Friend',
+      'Do you want to remove this user from your friend list?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Remove',
+          onPress: () => confirmRemoveFriend(friendId)
+        }
+      ]
+    );
+  };
+  
+  const confirmRemoveFriend = async (friendId) => {
+    const removeFriendFunction = httpsCallable(functions, 'removeFriend');
+    try {
+      const result = await removeFriendFunction({
+        initiatorId: auth.currentUser.uid, 
+        friendId
+      });
+  
+      if (result.data.success) {
+        setFriendsList(currentList => currentList.filter(id => id !== friendId));
+        Alert.alert('Success', 'Friend removed successfully.');
+      } else {
+        Alert.alert('Error', result.data.error || 'Failed to remove friend.');
+      }
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Could not remove friend.');
+    }
+  };
+  
+
+  const renderFriendItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.friendItemContainer}
+      onPress={() => navigation.navigate('Messages', { userId: item })}
+    >
+      <View style={styles.friendItem}>
+        <Text style={styles.friendName}>{resolvedUsernames[item]}</Text>
+        <TouchableOpacity onPress={() => handleRemoveFriend(item)} style={styles.friendDelete}>
+          <MaterialCommunityIcons name="minus-circle-outline" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} key={key}>
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Inbox</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <AntDesign name="close" size={24} color="black" />
+          <AntDesign name="closecircleo" size={24} color="#ff6f00" />
         </TouchableOpacity>
       </View>
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={() => setModalVisible(true)} style={[styles.button, styles.viewRequestButton]}>
           <Text style={styles.buttonText}>View Requests</Text>
         </TouchableOpacity>
-        <TextInput 
-          placeholder="Enter Username" 
-          style={styles.searchInput} 
+        <TextInput
+          placeholder="Enter Username"
+          placeholderTextColor="#ff6f00"
+          style={styles.searchInput}
           value={username}
           onChangeText={setUsername}
+          maxLength={15}
         />
         <TouchableOpacity onPress={sendFriendRequest} style={[styles.button, styles.sendRequestButton]}>
           <Text style={styles.buttonText}>Send Request</Text>
         </TouchableOpacity>
       </View>
+      <FlatList
+        data={friendsList}
+        keyExtractor={(item) => item}
+        renderItem={renderFriendItem}
+        contentContainerStyle={styles.listContentContainer}
+      />
       <Modal
         visible={modalVisible}
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={closeModal}
         transparent={true}
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <Text style={styles.modalTitle}>Incoming Requests</Text>
-            <AntDesign name="closecircleo" size={24} color="black" onPress={() => setModalVisible(false)} style={styles.modalCloseButton} />
+            <AntDesign name="closecircleo" size={24} color="black" onPress={closeModal} style={styles.modalCloseButton} />
             {incomingRequests.length > 0 ? (
               <FlatList
-              data={incomingRequests}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <View style={styles.friendRequestBox}>
-                  <Text style={styles.friendRequestName}>{resolvedUsernames[item]}</Text>
-                  <View style={styles.friendRequestButtons}>
-                    <TouchableOpacity onPress={() => callAcceptFriendRequest(item)} style={styles.acceptButton}>
-                      <Text style={styles.buttonText}>ACCEPT</Text>
+                data={incomingRequests}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <View style={styles.friendRequestBox}>
+                    <TouchableOpacity onPress={() => navigateToProfile(item)}>
+                      <Text style={styles.friendRequestName}>{resolvedUsernames[item]}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => callRejectFriendRequest(item)} style={styles.rejectButton}>
-                      <Text style={styles.buttonText}>DECLINE</Text>
-                    </TouchableOpacity>
+                    <View style={styles.friendRequestButtons}>
+                      <TouchableOpacity onPress={() => callAcceptFriendRequest(item)} style={styles.acceptButton}>
+                        <Text style={styles.buttonText}>ACCEPT</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => callRejectFriendRequest(item)} style={styles.rejectButton}>
+                        <Text style={styles.buttonText}>DECLINE</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              )}
-              contentContainerStyle={styles.modalContentContainer}
-            />
+                )}
+                contentContainerStyle={styles.modalContentContainer}
+              />
             ) : (
-              <Text>No incoming requests</Text>
+              <Text style={styles.noRequestsText}>No incoming requests</Text>
             )}
           </View>
         </View>
@@ -198,62 +281,86 @@ const InboxScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#ddd', // Restore the bottom border
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'left',
+    color: '#ff6f00',
   },
   closeButton: {
-    position: 'absolute',
-    right: 10,
     padding: 10,
   },
   searchContainer: {
     flexDirection: 'row',
     padding: 16,
+    justifyContent: 'space-between', // Adjust the alignment of children
+    alignItems: 'center',
   },
   searchInput: {
-    flex: 2,
-    borderColor: '#000',
+    flex: 2, // Adjust the flex to control the width of the input
+    backgroundColor: 'white',
+    borderColor: '#ff6f00',
     borderWidth: 1,
     padding: 10,
     marginHorizontal: 8,
+    color: '#ff6f00',
+    borderRadius: 5, // Less rounded corners
   },
   button: {
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 16, // Adjust padding to control the size of the button
     backgroundColor: '#ff6f00',
-    flex: 1,
-    marginHorizontal: 4, // Adds spacing between buttons
-    borderRadius: 5, // Rounded corners for buttons
+    borderRadius: 5, // Less rounded corners
+    marginHorizontal: 4,
+    width: 110, // Adjust width as needed
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  viewRequestButton: {
+    // Remove flex and use width instead for explicit sizing
+    width: 100, // Set a fixed width
+  },
+  sendRequestButton: {
+    // Remove flex and use width instead for explicit sizing
+    width: 100, // Set a fixed width
+  },
+  friendItemContainer: {
+    backgroundColor: '#ff6f00', // Use your theme color here
+    borderRadius: 10, // Same roundness as your habit items
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginVertical: 5,
+    alignSelf: 'center',
+    width: '90%',
+  },
   friendItem: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   friendName: {
-    fontSize: 18,
+    fontSize: 18, // Larger font size for the username
+    color: 'white', // Username text color
+    flex: 1, // Allows the name to expand and fill the space
+  },
+  friendDelete: {
+    // Style for the delete button, aligning with your habit delete button
+    marginLeft: 'auto',
+    padding: 8,
   },
   listContentContainer: {
     paddingTop: 20,
@@ -267,7 +374,7 @@ const styles = StyleSheet.create({
   modalView: {
     marginTop: 50, // Push down from the top
     width: '95%', // Increase width if necessary
-    backgroundColor: 'white',
+    backgroundColor: '#ff6f00', // Set the modal background color
     borderRadius: 20,
     padding: 25,
     alignItems: 'center',
@@ -285,35 +392,44 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     alignSelf: 'flex-start',
     marginBottom: 20, // Space between title and content
+    color: 'white', // Set title color to white
   },
   modalCloseButton: {
     position: 'absolute',
     right: 20,
     top: 20,
+    color: 'white', // Set close button color to white
   },
   modalContentContainer: {
     width: '100%',
   },
   friendRequestBox: {
     flexDirection: 'row',
-    justifyContent: 'flex-start', // Align items to start
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'white', // Set the friend request box color to white
     borderRadius: 10,
     paddingVertical: 10,
-    paddingHorizontal: 12, // Adjust padding as necessary
+    paddingHorizontal: 12,
     marginVertical: 8,
-    width: '100%', // Box takes the full width of the modal
+    width: '100%',
     elevation: 1,
   },
   friendRequestName: {
     fontWeight: 'bold',
     fontSize: 16,
-    maxWidth: '50%', // Set max width to accommodate the buttons
+    color: '#ff6f00', // Set username text color
+    alignSelf: 'center', // Align the text vertically
   },
   friendRequestButtons: {
     flexDirection: 'row',
     marginLeft: 'auto', // Push the buttons to the end of the container
+  },
+  noRequestsText: {
+    fontSize: 18, // Make the font size larger as needed
+    color: 'white', // Set the text color to white
+    textAlign: 'center', // Center the text horizontally
+    marginTop: 20, // Add some space above the text if needed
   },
   acceptButton: {
     backgroundColor: '#34C759',

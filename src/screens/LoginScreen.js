@@ -33,8 +33,10 @@ function LoginScreen({ navigation }) {
               firstName: firstName,
               lastName: lastName, // This can be an empty string if lastName does not exist
               petName: 'Pal',
-              currency: 0,
-              highestStreak: 0,
+              currency: 0, // Current available currency
+              totalCurrencyEarned: 0, // Total currency earned over time
+              longestCurrentStreak: 0, // This will be the highest streak ever achieved across all habits
+              longestObtainedStreak: 0, // The highest active streak among current habits
               happinessMeter: 100,
               friends: [],
               badges: [],

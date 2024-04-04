@@ -8,40 +8,64 @@ const logger = require("firebase-functions/logger");
 exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
 .timeZone('Europe/London')
 .onRun(async () => {
-  const usersSnapshot = await admin.firestore().collection('Users').get();
+  const db = admin.firestore();
+  const usersSnapshot = await db.collection('Users').get();
 
   usersSnapshot.forEach(async (userDoc) => {
-    const habitsSnapshot = await userDoc.ref.collection('Habits').get();
+    const userHabitsRef = userDoc.ref.collection('Habits');
+    const habitsSnapshot = await userHabitsRef.get();
+
     let pendingCount = 0;
-    let updatePromises = [];
+    let completedHabitsToday = 0;
+    let longestCurrentStreak = 0;
 
     habitsSnapshot.forEach((habitDoc) => {
       const habit = habitDoc.data();
+      const lastUpdated = habit.lastUpdated.toDate();
+      const now = new Date();
+
+      // Check if habit was completed today
+      if (habit.status === 'complete' && lastUpdated.setHours(0,0,0,0) === now.setHours(0,0,0,0)) {
+        completedHabitsToday++;
+        if (habit.streak > longestCurrentStreak) {
+          longestCurrentStreak = habit.streak;
+        }
+      }
+
       if (habit.status === 'pending') {
         pendingCount++;
-        updatePromises.push(habitDoc.ref.update({ streak: 0 })); // Reset streak for pending habits
+        // Reset streak for pending habits
+        habitDoc.ref.update({ streak: 0, status: 'pending' });
       } else if (habit.status === 'complete') {
-        updatePromises.push(habitDoc.ref.update({ status: 'pending' })); // Set complete habits to pending
+        // Set complete habits to pending for the next day
+        habitDoc.ref.update({ status: 'pending' });
       }
     });
 
-    // Calculate the total happiness reduction
     const totalHappinessReduction = pendingCount * 10;
     const newHappiness = Math.max((userDoc.data().happinessMeter || 100) - totalHappinessReduction, 0);
 
-    // Prepare the user happiness update promise
-    updatePromises.push(userDoc.ref.update({ happinessMeter: newHappiness }));
+    let userUpdates = {
+      happinessMeter: newHappiness
+    };
 
-    // Execute all updates together
-    await Promise.all(updatePromises).then(() => {
-      console.log(`User ${userDoc.id} updated: happiness and habit streaks reset.`);
-    }).catch((error) => {
-      console.error("Error updating user habits and happiness: ", error);
-    });
+    // If no habits were completed today, reset the longest current streak
+    if (completedHabitsToday === 0) {
+      userUpdates.longestCurrentStreak = 0;
+    } else {
+      // Update the longest current streak if there's a new maximum
+      userUpdates.longestCurrentStreak = longestCurrentStreak;
+    }
+
+    // Execute user update
+    userDoc.ref.update(userUpdates);
+
+    console.log(`User ${userDoc.id} updated: happiness and habit streaks reset. Longest current streak updated.`);
   });
 
-  console.log('All habit statuses and user happiness levels updated');
+  console.log('All habit statuses, user happiness levels, and longest current streaks updated.');
 });
+
 
 exports.sendFriendRequest = functions.https.onCall(async (data, context) => {
   // Ensure authenticated user
@@ -129,4 +153,50 @@ exports.rejectFriendRequest = functions.https.onCall(async (data, context) => {
     return { success: false, error: error.message };
   }
 });
+
+exports.removeFriend = functions.https.onCall(async (data, context) => {
+  // Ensure the initiating user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'The user must be authenticated to remove friends.');
+  }
+
+  const { initiatorId, friendId } = data; // IDs of the users involved in the friendship
+
+  // Make sure the initiatorId matches the authenticated user to prevent unauthorized removals
+  if (context.auth.uid !== initiatorId) {
+    throw new functions.https.HttpsError('permission-denied', 'The user does not have permission to remove this friend.');
+  }
+
+  const db = admin.firestore();
+  const initiatorRef = db.collection('Users').doc(initiatorId);
+  const friendRef = db.collection('Users').doc(friendId);
+
+  try {
+    await db.runTransaction(async (transaction) => {
+      const initiatorDoc = await transaction.get(initiatorRef);
+      const friendDoc = await transaction.get(friendRef);
+
+      if (!initiatorDoc.exists || !friendDoc.exists) {
+        throw new functions.https.HttpsError('not-found', 'One or both users do not exist.');
+      }
+
+      // Remove friendId from the initiator's friend list
+      transaction.update(initiatorRef, {
+        friends: admin.firestore.FieldValue.arrayRemove(friendId),
+      });
+
+      // Remove initiatorId from the friend's friend list
+      transaction.update(friendRef, {
+        friends: admin.firestore.FieldValue.arrayRemove(initiatorId),
+      });
+    });
+
+    console.log(`Friendship removed between ${initiatorId} and ${friendId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing friendship: ", error);
+    return { success: false, error: error.message };
+  }
+});
+
 

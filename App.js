@@ -10,7 +10,7 @@ import BadgesScreen from './src/screens/BadgesScreen';
 import ShopScreen from './src/screens/ShopScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import RankScreen from './src/screens/RankScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
+import ProfileScreen from './src/screens/ProfileScreen'; // Ensure this import is correct
 import SettingsScreen from './src/screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -69,4 +69,3 @@ function App() {
 }
 
 export default App;
-

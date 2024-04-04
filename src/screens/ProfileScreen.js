@@ -5,21 +5,25 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
 import petImages from '../utils/petImages'; // Ensure this is correctly imported
 
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = ({ navigation, route }) => {
   const [userData, setUserData] = useState(null);
+  // Get userId from route params, default to current user if not provided
+  const userId = route.params?.userId || auth.currentUser?.uid;
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocRef = doc(db, 'Users', user.uid);
+    if (userId) {
+      const userDocRef = doc(db, 'Users', userId);
       const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           setUserData(docSnap.data());
+        } else {
+          // Handle case where user data does not exist (e.g., invalid userId)
+          console.log("No user data found.");
         }
       });
       return () => unsubscribe();
     }
-  }, []);
+  }, [userId]);
 
   if (!userData) {
     return (
@@ -32,13 +36,13 @@ const ProfileScreen = ({ navigation }) => {
   // Select pet image based on equipped color and add default fallback
   const petColorKey = userData.equippedItems?.petColour
     ? `${userData.equippedItems.petColour}Happy`
-    : 'whiteHappy'; // This should match the 'happy' key for a white pet in your petImages.js
+    : 'whiteHappy'; // Match the 'happy' key for a white pet in your petImages.js
   const petImageSrc = petImages[petColorKey];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: userData.equippedItems?.backgroundColour || 'white' }]}>
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
-        <Text style={styles.headerTitle}>{`${userData.username}'s Profile`}</Text>
+        <Text style={styles.headerTitle}>{`${userData.username || 'User'}'s Profile`}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
           <MaterialIcons name="close" size={24} color="#ff6f00" />
         </TouchableOpacity>
@@ -53,9 +57,9 @@ const ProfileScreen = ({ navigation }) => {
           )}
         </View>
         <Text style={styles.infoText}>{`Pet Name: ${userData.petName}`}</Text>
-        <Text style={styles.infoText}>{`Current Habit Streak: ${userData.highestStreak || 0} Days`}</Text>
-        <Text style={styles.infoText}>{`Longest Habit Streak: ${userData.highestStreak || 0} Days`}</Text>
-        <Text style={styles.infoText}>{`Currency Earned: ${userData.currency || 0} Coins`}</Text>
+        <Text style={styles.infoText}>{`Current Habit Streak: ${userData.longestCurrentStreak || 0} Days`}</Text>
+        <Text style={styles.infoText}>{`Longest Habit Streak: ${userData.longestObtainedStreak || 0} Days`}</Text>
+        <Text style={styles.infoText}>{`Total Currency Earned: ${userData.totalCurrencyEarned || 0} Coins`}</Text>
         <Text style={styles.infoText}>{`Number Of Friends: ${userData.friends?.length || 0}`}</Text>
       </View>
     </SafeAreaView>
@@ -81,12 +85,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: '#ff6f00', // Change text color to white
+    color: '#ff6f00',
   },
   closeButton: {
     position: 'absolute',
     right: 10,
-    color: '#ff6f00', // Consider changing the icon color if necessary
+    color: '#ff6f00',
   },
   profileContent: {
     flex: 1,
@@ -103,21 +107,21 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     marginBottom: 20,
-    marginLeft: -30, // Adjust as needed
+    marginLeft: -30,
   },
   glassesImage: {
     position: 'absolute',
     width: 300,
     height: 500,
     resizeMode: 'contain',
-    top: -110, // Adjust as needed
-    left: -30, // Adjust as needed
+    top: -110,
+    left: -30,
   },
   infoText: {
     fontSize: 22,
     fontWeight: 'bold',
     marginVertical: 10,
-    color: '#ff6f00', // Change text color to white
+    color: '#ff6f00',
   },
 });
 
