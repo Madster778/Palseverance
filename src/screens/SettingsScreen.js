@@ -85,7 +85,7 @@ const SettingsScreen = ({ navigation }) => {
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <AntDesign name="close" size={24} color="#ff6f00" />
+          <AntDesign name="closecircleo" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -157,21 +157,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd', // Consider changing if needed to suit new color scheme
+    padding: 18,
+    borderBottomWidth: 3,
+    borderBottomColor: '#fff', // Change to white to match the header background
+    backgroundColor: '#ff6f00', // Change to #ff6f00
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: '#ff6f00', // Change text color to white
+    color: '#fff', // Change text color to white
   },
   closeButton: {
     position: 'absolute',
     right: 10,
-    // The close button color is controlled by the AntDesign icon color attribute below
   },
   content: {
     flex: 1,
@@ -191,10 +191,10 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ff6f00', // Consider changing if needed
-    backgroundColor: 'rgba(255,255,255, 0.9)', // Adjust transparency as desired
-    color: '#ff6f00', // Change text color to white for visibility on light backgrounds
+    borderWidth: 3,
+    borderColor: '#ff6f00',
+    backgroundColor: 'white', 
+    color: '#ff6f00',
     padding: 10,
     marginBottom: 20,
     borderRadius: 5,

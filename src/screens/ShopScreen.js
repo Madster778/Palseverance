@@ -162,7 +162,7 @@ const ShopScreen = ({ navigation }) => {
           <Text style={styles.headerTitle}>Shop</Text>
           <Text style={styles.currencyText}>Currency: {userData.currency}</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-              <AntDesign name="close" size={24} color="#ff6f00" />
+              <AntDesign name="closecircleo" size={24} color="white" />
           </TouchableOpacity>
         </View>
         {Object.keys(shopItems).map((category) => (
@@ -185,6 +185,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 3,
+    borderBottomColor: '#fff', // Change to white
+    backgroundColor: '#ff6f00', // Change to #ff6f00
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff', // Change to white
+  },
+  currencyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff', // Also change the currency text color to white for consistency
+  },
+  closeButton: {
+    padding: 10,
+  },
   categoryContainer: {
     padding: 10,
   },
@@ -193,28 +216,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#ff6f00',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#ff6f00',
-  },
-  currencyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ff6f00', // Currency text color
-  },
-  closeButton: {
-    padding: 10,
   },
   list: {
     padding: 16,

@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+
 admin.initializeApp();
 
 // Import logger for logging messages
@@ -98,33 +99,47 @@ exports.sendFriendRequest = functions.https.onCall(async (data, context) => {
 });
 
 exports.acceptFriendRequest = functions.https.onCall(async (data, context) => {
-  const { requesterId, recipientId } = data; // IDs of the users involved in the friend request
+  const { requesterId, recipientId } = data;
 
   const db = admin.firestore();
   const requesterRef = db.collection('Users').doc(requesterId);
   const recipientRef = db.collection('Users').doc(recipientId);
 
-  // Transaction to ensure atomic updates
   try {
+    let chatId = null;
+
     await db.runTransaction(async (transaction) => {
-      // Update the requester's document
+      const requesterDoc = await transaction.get(requesterRef);
+      const recipientDoc = await transaction.get(recipientRef);
+
+      // Ensure both users exist
+      if (!requesterDoc.exists || !recipientDoc.exists) {
+        throw new functions.https.HttpsError('failed-precondition', 'One or both of the users do not exist.');
+      }
+
+      // Update the requester's and recipient's documents to reflect the new friendship
       transaction.update(requesterRef, {
         outgoingRequests: admin.firestore.FieldValue.arrayRemove(recipientId),
         friends: admin.firestore.FieldValue.arrayUnion(recipientId),
       });
-
-      // Update the recipient's document
       transaction.update(recipientRef, {
         incomingRequests: admin.firestore.FieldValue.arrayRemove(requesterId),
         friends: admin.firestore.FieldValue.arrayUnion(requesterId),
       });
+
+      // Create a chat document for the new friends
+      const chatRef = db.collection('Chats').doc();
+      chatId = chatRef.id;
+      transaction.set(chatRef, {
+        participants: [requesterId, recipientId],
+      });
     });
 
-    console.log(`Friend request accepted between ${requesterId} and ${recipientId}`);
-    return { success: true };
+    console.log(`Friend request accepted between ${requesterId} and ${recipientId}, chat created with ID: ${chatId}`);
+    return { success: true, chatId: chatId };
   } catch (error) {
-    console.error("Error accepting friend request: ", error);
-    return { success: false, error: error.message };
+    console.error("Error accepting friend request and creating chat: ", error);
+    throw new functions.https.HttpsError('unknown', `Error accepting friend request and creating chat: ${error.message}`);
   }
 });
 
@@ -199,4 +214,41 @@ exports.removeFriend = functions.https.onCall(async (data, context) => {
   }
 });
 
+exports.deleteUserChatMessages = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to delete chats and messages.');
+  }
 
+  const { userId1, userId2 } = data;
+  const db = admin.firestore();
+
+  try {
+    const chatsQuery = db.collection('Chats')
+      .where('participants', 'array-contains', userId1);
+    const chatsSnapshot = await chatsQuery.get();
+
+    let batch = db.batch();
+
+    for (const chatDoc of chatsSnapshot.docs) {
+      const participants = chatDoc.data().participants;
+      // Ensure the chat includes both userId1 and userId2
+      if (participants.includes(userId1) && participants.includes(userId2)) {
+        // Query all messages in the chat's subcollection
+        const messagesSnapshot = await chatDoc.ref.collection('Messages').get();
+        messagesSnapshot.forEach(msgDoc => {
+          batch.delete(msgDoc.ref); // Queue each message for deletion
+        });
+
+        // Queue the chat document for deletion
+        batch.delete(chatDoc.ref);
+      }
+    }
+
+    await batch.commit(); // Execute batch deletion
+    console.log('Chat and messages between the users have been successfully deleted.');
+    return { success: true, message: 'Chat and messages deleted successfully.' };
+  } catch (error) {
+    console.error("Error deleting chat and messages: ", error);
+    return { success: false, error: error.message };
+  }
+});

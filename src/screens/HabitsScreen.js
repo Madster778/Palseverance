@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, onSnapshot, collection, addDoc, deleteDoc, orderBy, query, runTransaction } from 'firebase/firestore';
 
@@ -164,7 +164,7 @@ const HabitsScreen = ({ navigation }) => {
             <Text style={styles.currencyText}>{`Currency: ${currency} `}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <MaterialCommunityIcons name="close" size={24} color="#ff6f00" />
+          <AntDesign name="closecircleo" size={24} color="white" />
           </TouchableOpacity>
         </View>
         <FlatList
@@ -197,29 +197,30 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Ensures items are spaced out to the container's edges
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    paddingVertical: 18,
+    borderBottomWidth: 3,
+    borderBottomColor: 'white', // Change to white
+    backgroundColor: '#ff6f00', // Change to #ff6f00
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#ff6f00', // Change text color to white
+    color: 'white', // Change to white
   },
   currencyContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    alignItems: 'center', // Centers the currency text horizontally
-    zIndex: -1, // Ensures this doesn't interfere with button presses
+    alignItems: 'center',
+    zIndex: -1,
   },
   currencyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ff6f00', // Currency text color
+    color: 'white', // Currency text color to white
   },
   habitItem: {
     flexDirection: 'row',
@@ -228,6 +229,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginVertical: 5,
     backgroundColor: '#ff6f00',
+    borderColor: 'white',
+    borderWidth: 3,
     borderRadius: 10,
     alignSelf: 'center',
     width: '90%',
@@ -246,8 +249,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   addNewHabitContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
+    borderTopWidth: 3,
+    borderTopColor: 'white',
     paddingHorizontal: 16,
     paddingVertical: 20,
     flexDirection: 'row',
@@ -255,11 +258,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newHabitInput: {
-     // Match Settings screen input background
     fontSize: 16,
-    borderWidth: 1,
+    borderWidth: 3,
     borderColor: '#ff6f00',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'white',
     padding: 10,
     marginRight: 8,
     borderRadius: 5,
@@ -271,6 +273,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
+    borderColor: 'white',
+    borderWidth: 3,
   },
   addButtonText: {
     color: 'white',

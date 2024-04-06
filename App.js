@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { auth } from './src/firebase/firebaseConfig'; // Update this path if needed
+import { auth } from './src/firebase/firebaseConfig';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import HabitsScreen from './src/screens/HabitsScreen';
 import BadgesScreen from './src/screens/BadgesScreen';
 import ShopScreen from './src/screens/ShopScreen';
 import InboxScreen from './src/screens/InboxScreen';
+import MessageScreen from './src/screens/MessageScreen';
 import RankScreen from './src/screens/RankScreen';
-import ProfileScreen from './src/screens/ProfileScreen'; // Ensure this import is correct
+import ProfileScreen from './src/screens/ProfileScreen'; 
 import SettingsScreen from './src/screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -52,6 +53,7 @@ function App() {
             <Stack.Screen name="Badges" component={BadgesScreen} />
             <Stack.Screen name="Shop" component={ShopScreen} />
             <Stack.Screen name="Inbox" component={InboxScreen} />
+            <Stack.Screen name="MessageScreen" component={MessageScreen} />
             <Stack.Screen name="Rank" component={RankScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />

@@ -47,20 +47,24 @@ const InboxScreen = ({ navigation }) => {
     resolveUsernames(friendsList);
   }, [friendsList]);
 
+  useEffect(() => {
+    resolveUsernames([...incomingRequests, ...friendsList]);
+  }, [incomingRequests, friendsList]);
+
   const resolveUsernames = async (userIds) => {
     const usersCollectionRef = collection(db, 'Users');
     let usernamesMap = { ...resolvedUsernames };
     
-    for (const userId of userIds) {
-      if (!usernamesMap[userId]) {
-        const userDocSnap = await getDoc(doc(usersCollectionRef, userId));
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          usernamesMap[userId] = userData.username;
-        }
+    const userDocs = await Promise.all(userIds.map(id => getDoc(doc(usersCollectionRef, id))));
+    userDocs.forEach((docSnap, index) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        usernamesMap[userIds[index]] = userData.username;
+      } else {
+        usernamesMap[userIds[index]] = 'Unknown';
       }
-    }
-
+    });
+  
     setResolvedUsernames(usernamesMap);
   };
 
@@ -172,27 +176,85 @@ const InboxScreen = ({ navigation }) => {
   const confirmRemoveFriend = async (friendId) => {
     const removeFriendFunction = httpsCallable(functions, 'removeFriend');
     try {
-      const result = await removeFriendFunction({
-        initiatorId: auth.currentUser.uid, 
-        friendId
+      // First, remove the friend from the user's friend list
+      const removeFriendResult = await removeFriendFunction({
+          initiatorId: auth.currentUser.uid, 
+          friendId
       });
-  
-      if (result.data.success) {
-        setFriendsList(currentList => currentList.filter(id => id !== friendId));
-        Alert.alert('Success', 'Friend removed successfully.');
+            if (removeFriendResult.data.success) {
+          // Then, delete the chat and messages between the two users
+          const deleteUserChatMessages = httpsCallable(functions, 'deleteUserChatMessages'); // Use the correct name of your Cloud Function
+          const deleteUserChatMessagesResult = await deleteUserChatMessages({
+              userId1: auth.currentUser.uid,
+              userId2: friendId
+          });
+          
+          if (deleteUserChatMessagesResult.data.success) {
+              // If chat and messages are successfully deleted, update the UI
+              setFriendsList(currentList => currentList.filter(id => id !== friendId));
+              Alert.alert('Success', 'Friend and chat history removed successfully.');
+          } else {
+              // Handle failure to delete chat and messages
+              Alert.alert('Error', deleteUserChatMessagesResult.data.error || 'Failed to delete chat and messages.');
+          }
       } else {
-        Alert.alert('Error', result.data.error || 'Failed to remove friend.');
+          // Handle failure to remove friend
+          Alert.alert('Error', removeFriendResult.data.error || 'Failed to remove friend.');
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'Could not remove friend.');
+        // Handle errors in the overall operation
+        Alert.alert('Error', error.message || 'An error occurred while removing the friend and chat.');
     }
   };
   
+  // Function to handle opening a chat
+  const openChat = async (friendUserId) => {
+    // Attempt to find an existing chat document or create a new one if not found
+    try {
+      const chatsRef = collection(db, 'Chats');
+      const q = query(chatsRef, where('participants', 'array-contains', auth.currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      let chatDoc = querySnapshot.docs.find((doc) => doc.data().participants.includes(friendUserId));
+      let chatId;
+  
+      if (chatDoc) {
+        chatId = chatDoc.id;
+      } else {
+        // No chat found, create a new chat document
+        const docRef = await addDoc(chatsRef, {
+          participants: [auth.currentUser.uid, friendUserId],
+          messages: [], // Initialize with empty messages
+        });
+        chatId = docRef.id;
+      }
+  
+      // Retrieve the friend's username from the users collection
+      const userDoc = await getDoc(doc(db, 'Users', friendUserId));
+      const friendUsername = userDoc.exists() ? userDoc.data().username : null;
+  
+      if (friendUsername) {
+        // Navigate to the MessageScreen with the chatId and friendUsername
+        navigation.navigate('MessageScreen', {
+          userId: auth.currentUser.uid,
+          chatId: chatId,
+          friendUsername: friendUsername,
+          friendUserId: friendUserId
+        });
+      } else {
+        // Handle the case where the username could not be found
+        console.error('Failed to retrieve friend username');
+        Alert.alert('Error', 'Failed to retrieve friend username.');
+      }
+    } catch (error) {
+      console.error('Failed to open chat:', error);
+      Alert.alert('Error', 'Failed to open chat.');
+    }
+  };
 
   const renderFriendItem = ({ item }) => (
     <TouchableOpacity
       style={styles.friendItemContainer}
-      onPress={() => navigation.navigate('Messages', { userId: item })}
+      onPress={() => openChat(item)}
     >
       <View style={styles.friendItem}>
         <Text style={styles.friendName}>{resolvedUsernames[item]}</Text>
@@ -201,7 +263,7 @@ const InboxScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
-  );
+  );  
 
   const closeModal = () => {
     setModalVisible(false);
@@ -212,7 +274,7 @@ const InboxScreen = ({ navigation }) => {
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>Inbox</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <AntDesign name="closecircleo" size={24} color="#ff6f00" />
+          <AntDesign name="closecircleo" size={24} color="white" />
         </TouchableOpacity>
       </View>
       <View style={styles.searchContainer}>
@@ -288,13 +350,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd', // Restore the bottom border
+    borderBottomWidth: 3,
+    borderBottomColor: '#fff', // Changed to white
+    backgroundColor: '#ff6f00', // Changed to #ff6f00
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#ff6f00',
+    color: '#fff', // Changed to white
   },
   closeButton: {
     padding: 10,
@@ -309,7 +372,7 @@ const styles = StyleSheet.create({
     flex: 2, // Adjust the flex to control the width of the input
     backgroundColor: 'white',
     borderColor: '#ff6f00',
-    borderWidth: 1,
+    borderWidth: 3,
     padding: 10,
     marginHorizontal: 8,
     color: '#ff6f00',
@@ -333,10 +396,16 @@ const styles = StyleSheet.create({
   viewRequestButton: {
     // Remove flex and use width instead for explicit sizing
     width: 100, // Set a fixed width
+    borderRadius: 5,
+    borderColor: 'white',
+    borderWidth: 3,
   },
   sendRequestButton: {
     // Remove flex and use width instead for explicit sizing
     width: 100, // Set a fixed width
+    borderRadius: 5,
+    borderColor: 'white',
+    borderWidth: 3,
   },
   friendItemContainer: {
     backgroundColor: '#ff6f00', // Use your theme color here

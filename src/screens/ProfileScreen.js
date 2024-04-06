@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons'; // Import AntDesign
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
 import petImages from '../utils/petImages'; // Ensure this is correctly imported
@@ -44,7 +44,7 @@ const ProfileScreen = ({ navigation, route }) => {
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
         <Text style={styles.headerTitle}>{`${userData.username || 'User'}'s Profile`}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <MaterialIcons name="close" size={24} color="#ff6f00" />
+          <AntDesign name="closecircleo" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -76,21 +76,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    padding: 18,
+    borderBottomWidth: 3,
+    borderBottomColor: '#fff', // Change to white to match the new header background
+    backgroundColor: '#ff6f00', // Change to #ff6f00
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: '#ff6f00',
+    color: '#fff', // Change text color to white
   },
   closeButton: {
     position: 'absolute',
     right: 10,
-    color: '#ff6f00',
   },
   profileContent: {
     flex: 1,
