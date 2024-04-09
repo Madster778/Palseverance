@@ -223,6 +223,8 @@ const styles = StyleSheet.create({
   item: {
     backgroundColor: 'white',
     borderRadius: 10,
+    borderColor: '#ff6f00', // Set the border color to white
+    borderWidth: 3, // Set the border width, adjust as needed
     padding: 8, // Slightly reduced padding
     margin: 4, // Reduced margin to give more space
     flex: 1 / 3, // Keeps 3 items per row

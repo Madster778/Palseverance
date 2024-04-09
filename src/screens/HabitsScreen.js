@@ -225,9 +225,9 @@ const styles = StyleSheet.create({
   habitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 15,
     paddingHorizontal: 20,
-    marginVertical: 5,
+    marginVertical: 8,
     backgroundColor: '#ff6f00',
     borderColor: 'white',
     borderWidth: 3,

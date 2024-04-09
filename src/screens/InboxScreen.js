@@ -297,7 +297,6 @@ const InboxScreen = ({ navigation }) => {
         data={friendsList}
         keyExtractor={(item) => item}
         renderItem={renderFriendItem}
-        contentContainerStyle={styles.listContentContainer}
       />
       <Modal
         visible={modalVisible}
@@ -373,20 +372,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderColor: '#ff6f00',
     borderWidth: 3,
+    height: 50, // Set the fixed height here
     padding: 10,
     marginHorizontal: 8,
     color: '#ff6f00',
     borderRadius: 5, // Less rounded corners
   },
   button: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16, // Adjust padding to control the size of the button
+    alignItems: 'center', // Center items horizontally
+    justifyContent: 'center', // Center items vertically
+    paddingHorizontal: 16,
+    paddingVertical: 0, // Set paddingVertical to 0 and control the height directly
     backgroundColor: '#ff6f00',
-    borderRadius: 5, // Less rounded corners
+    borderRadius: 5,
     marginHorizontal: 4,
     width: 110, // Adjust width as needed
+    height: 50, // Match the height of the TextInput
   },
   buttonText: {
     color: 'white',
@@ -412,9 +413,11 @@ const styles = StyleSheet.create({
     borderRadius: 10, // Same roundness as your habit items
     paddingVertical: 10,
     paddingHorizontal: 20,
-    marginVertical: 5,
+    marginVertical: 8,
     alignSelf: 'center',
     width: '90%',
+    borderWidth: 3, // Add a border width for the white border
+    borderColor: 'white', // Border color set to white
   },
   friendItem: {
     flexDirection: 'row',
@@ -431,9 +434,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     padding: 8,
   },
-  listContentContainer: {
-    paddingTop: 20,
-  },
   centeredView: {
     flex: 1,
     justifyContent: 'center',
@@ -445,6 +445,8 @@ const styles = StyleSheet.create({
     width: '95%', // Increase width if necessary
     backgroundColor: '#ff6f00', // Set the modal background color
     borderRadius: 20,
+    borderColor: 'white', // Set the border color to white
+    borderWidth: 3, // Set the border width, adjust as needed
     padding: 25,
     alignItems: 'center',
     shadowColor: '#000',
