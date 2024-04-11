@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, FlatList, Alert, Image } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
-import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 
 const ShopScreen = ({ navigation }) => {
   const [shopItems, setShopItems] = useState([]);
@@ -42,30 +42,71 @@ const ShopScreen = ({ navigation }) => {
     return formatted.charAt(0).toUpperCase() + formatted.slice(1); // Capitalizes the first letter
   };
 
+  // Add this function within your ShopScreen component
+  const updateCollectorBadge = async (newOwnedItems) => {
+    const badgesRef = collection(db, 'Badges');
+    const userRef = doc(db, 'Users', auth.currentUser.uid);
+    const badgeSnap = await getDocs(badgesRef);
+    const badgeData = {};
+
+    badgeSnap.forEach((doc) => {
+      badgeData[doc.id] = doc.data();
+    });
+
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) {
+        throw "User does not exist!";
+      }
+
+      let collectorBadge = userDoc.data().badges.find(badge => badge.badgeId === 'collector');
+      const currentTier = collectorBadge ? collectorBadge.highestTierAchieved : 0;
+      const nextTier = badgeData.collector.tiers.find(tier => tier.threshold === newOwnedItems.length);
+
+      // If the next tier threshold is met and is higher than the current tier, update the badge
+      if (nextTier && nextTier.tier > currentTier) {
+        const updatedBadges = userDoc.data().badges.map(badge => {
+          if (badge.badgeId === 'collector') {
+            return { ...badge, highestTierAchieved: nextTier.tier };
+          }
+          return badge;
+        });
+
+        transaction.update(userRef, { badges: updatedBadges });
+      }
+    });
+  };
+
+
   const handleBuyOrEquip = async (item) => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const isOwned = userData.ownedItems.includes(item.id);
   
-    const confirmPurchase = () => {
+    const confirmPurchase = async () => {
       if (userData.currency < item.cost) {
         Alert.alert("Insufficient funds", "Keep working on your habits!");
       } else {
-        updateDoc(userRef, {
-          currency: userData.currency - item.cost,
-          ownedItems: arrayUnion(item.id),
-        }).then(() => {
+        try {
+          await updateDoc(userRef, {
+            currency: userData.currency - item.cost,
+            ownedItems: arrayUnion(item.id),
+          });
           Alert.alert("Purchase successful", `You have purchased ${item.name}`);
-          fetchUserData();
-        }).catch(error => {
+          const newOwnedItems = [...userData.ownedItems, item.id];
+          setUserData({ ...userData, currency: userData.currency - item.cost, ownedItems: newOwnedItems });
+          await updateCollectorBadge(newOwnedItems);
+          await fetchUserData();
+        } catch (error) {
           console.error("Purchase failed", error);
-        });
+          Alert.alert("Purchase failed", "There was an issue processing your purchase.");
+        }
       }
     };
+  
     if (!isOwned) {
-      // Prompt the user to confirm the purchase
       Alert.alert(
         "Confirm Purchase",
-        `Do you want to purchase this item?`,
+        `Do you want to purchase this item for ${item.cost} coins?`,
         [
           {
             text: "No",
@@ -74,7 +115,7 @@ const ShopScreen = ({ navigation }) => {
           { text: "Yes", onPress: confirmPurchase }
         ]
       );
-    } else if (isOwned) {
+    } else {
         let updateObject = {};
         const isEquipped = item.type === 'glasses' ? userData.equippedItems.glasses : userData.equippedItems[item.type] === (item.type === 'backgroundColour' ? item.colourCode : item.name);
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
-import { doc, onSnapshot, collection, addDoc, deleteDoc, orderBy, query, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, addDoc, deleteDoc, orderBy, query, runTransaction } from 'firebase/firestore';
 
 const HabitsScreen = ({ navigation }) => {
   const [habits, setHabits] = useState([]);
@@ -77,59 +77,80 @@ const HabitsScreen = ({ navigation }) => {
       ]
     );
   };
-  
 
-  // Complete a habit
-  const completeHabit = async (habitId) => {
-    const userRef = doc(db, "Users", auth.currentUser.uid);
-    const habitRef = doc(db, "Users", auth.currentUser.uid, "Habits", habitId);
-  
-    try {
-      await runTransaction(db, async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        const habitDoc = await transaction.get(habitRef);
-        if (!habitDoc.exists()) {
-          console.error("Document does not exist!");
-          return;
-        }
-        const habitData = habitDoc.data();
-        const newStreak = habitData.streak + 1;
-        const currencyIncrement = 10 * newStreak; // Assuming 10 is the currency reward for completing a habit
-        const newCurrency = userDoc.data().currency + currencyIncrement;
-        const newHappiness = Math.min(userDoc.data().happinessMeter + 5, 100); // Increment happiness by 5, capped at 100
-  
-        let longestCurrentStreak = userDoc.data().longestCurrentStreak || 0;
-        let totalCurrencyEarned = userDoc.data().totalCurrencyEarned || 0;
-        let longestObtainedStreak = userDoc.data().longestObtainedStreak || 0;
-  
-        totalCurrencyEarned += currencyIncrement;
-  
-        if (newStreak > longestCurrentStreak) {
-          longestCurrentStreak = newStreak;
-        }
-  
-        if (newStreak > longestObtainedStreak) {
-          longestObtainedStreak = newStreak;
-        }
-  
-        // Update the habit document with the new streak and set its status to 'complete'
-        transaction.update(habitRef, { streak: newStreak, status: "complete", lastUpdated: new Date() });
-  
-        // Update the user document with the new currency, happiness, total currency earned, longest current streak, and longest obtained streak
-        transaction.update(userRef, { 
-          currency: newCurrency, 
-          happinessMeter: newHappiness,
-          totalCurrencyEarned: totalCurrencyEarned,
-          longestCurrentStreak: longestCurrentStreak,
-          longestObtainedStreak: longestObtainedStreak
-        });
-      });
-      console.log("Habit completed successfully");
-    } catch (e) {
-      console.error("Transaction failed: ", e);
+  // Helper function to check for new badge tiers
+  const checkForNewBadgeTier = async (userId, badgeId, newMetricValue) => {
+    const badgeRef = doc(db, 'Badges', badgeId);
+    const badgeSnap = await getDoc(badgeRef);
+    if (!badgeSnap.exists()) {
+      console.error(`No badge found with ID: ${badgeId}`);
+      return null;
     }
+    const badgeData = badgeSnap.data();
+    const tiers = badgeData.tiers;
+    // Find the highest tier that the user's metric value meets or exceeds
+    const highestTier = tiers.slice().reverse().find(tier => newMetricValue >= tier.threshold);
+    return highestTier ? highestTier.tier : null;
   };
-  
+
+  const completeHabit = async (habitId) => {
+    const userRef = doc(db, 'Users', auth.currentUser.uid);
+    const habitRef = doc(db, 'Users', auth.currentUser.uid, 'Habits', habitId);
+
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      const habitDoc = await transaction.get(habitRef);
+      if (!userDoc.exists() || !habitDoc.exists()) {
+        throw new Error('Document does not exist!');
+      }
+      const habitData = habitDoc.data();
+      const newStreak = habitData.streak + 1;
+      const currencyIncrement = 10 * newStreak;
+      const newCurrency = userDoc.data().currency + currencyIncrement;
+      const newHappiness = Math.min(userDoc.data().happinessMeter + 5, 100);
+      const totalCurrencyEarned = (userDoc.data().totalCurrencyEarned || 0) + currencyIncrement;
+
+      // Check for new badge tiers
+      const habitStreakBadgeTier = await checkForNewBadgeTier(auth.currentUser.uid, 'habitStreak', newStreak);
+      const wealthBuilderBadgeTier = await checkForNewBadgeTier(auth.currentUser.uid, 'wealthBuilder', totalCurrencyEarned);
+      const userBadges = userDoc.data().badges || [];
+
+      // Update habit streak badge if a new tier was reached
+      if (habitStreakBadgeTier !== null) {
+        const habitStreakBadgeIndex = userBadges.findIndex(badge => badge.badgeId === 'habitStreak');
+        if (habitStreakBadgeIndex !== -1) {
+          userBadges[habitStreakBadgeIndex].highestTierAchieved = habitStreakBadgeTier;
+        } else {
+          userBadges.push({ badgeId: 'habitStreak', highestTierAchieved: habitStreakBadgeTier });
+        }
+      }
+
+      // Update wealth builder badge if a new tier was reached
+      if (wealthBuilderBadgeTier !== null) {
+        const wealthBuilderBadgeIndex = userBadges.findIndex(badge => badge.badgeId === 'wealthBuilder');
+        if (wealthBuilderBadgeIndex !== -1) {
+          userBadges[wealthBuilderBadgeIndex].highestTierAchieved = wealthBuilderBadgeTier;
+        } else {
+          userBadges.push({ badgeId: 'wealthBuilder', highestTierAchieved: wealthBuilderBadgeTier });
+        }
+      }
+
+      // Update the habit document
+      transaction.update(habitRef, {
+        streak: newStreak,
+        status: "complete",
+        lastUpdated: new Date()
+      });
+
+      // Update the user document
+      transaction.update(userRef, {
+        currency: newCurrency,
+        happinessMeter: newHappiness,
+        totalCurrencyEarned: totalCurrencyEarned,
+        badges: userBadges // Update badgesEarned
+      });
+    });
+  };
 
   // Delete a habit from Firestore
   const deleteHabit = async (habitId) => {
@@ -200,15 +221,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: 'white', // Change to white
+    borderBottomColor: '#fff', // Change to white
     backgroundColor: '#ff6f00', // Change to #ff6f00
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: 'white', // Change to white
+    color: '#fff', // Change to white
   },
   currencyContainer: {
     position: 'absolute',

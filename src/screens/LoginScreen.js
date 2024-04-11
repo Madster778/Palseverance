@@ -27,19 +27,25 @@ function LoginScreen({ navigation }) {
           const firstName = nameParts[0];
           const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''; // Join back the rest if there are multiple parts, else set lastName to empty string
         
+          const initialBadges = [
+            { badgeId: "habitStreak", highestTierAchieved: 0 },
+            { badgeId: "wealthBuilder", highestTierAchieved: 0 },
+            { badgeId: "collector", highestTierAchieved: 0 }
+          ];
+          
           if (!userSnap.exists()) {
             await setDoc(userRef, {
-              username: authResult.user.displayName || firstName, // Use displayName or firstName as fallback
+              username: authResult.user.displayName || firstName,
               firstName: firstName,
-              lastName: lastName, // This can be an empty string if lastName does not exist
+              lastName: lastName,
               petName: 'Pal',
-              currency: 0, // Current available currency
-              totalCurrencyEarned: 0, // Total currency earned over time
-              longestCurrentStreak: 0, // This will be the highest streak ever achieved across all habits
-              longestObtainedStreak: 0, // The highest active streak among current habits
+              currency: 0,
+              totalCurrencyEarned: 0,
+              longestCurrentStreak: 0,
+              longestObtainedStreak: 0,
               happinessMeter: 100,
               friends: [],
-              badges: [],
+              badges: initialBadges, // Include the initial badges here
               ownedItems: [],
               equippedItems: {
                 backgroundColour: 'lightgrey',
@@ -50,8 +56,8 @@ function LoginScreen({ navigation }) {
                 musicEnabled: true,
                 soundEnabled: true,
               },
-              incomingRequests: [], // Initialize as empty array
-              outgoingRequests: [] // Initialize as empty array
+              incomingRequests: [],
+              outgoingRequests: []
             });
           }
           setIsLoading(false); // End loading
