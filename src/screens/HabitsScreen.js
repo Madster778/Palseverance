@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
   addNewHabitContainer: {
     borderTopWidth: 3,
     borderTopColor: 'white',
+    backgroundColor: '#ff6f00',
     paddingHorizontal: 16,
     paddingVertical: 20,
     flexDirection: 'row',
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
   newHabitInput: {
     fontSize: 16,
     borderWidth: 3,
-    borderColor: '#ff6f00',
+    borderColor: 'black',
     backgroundColor: 'white',
     padding: 10,
     marginRight: 8,

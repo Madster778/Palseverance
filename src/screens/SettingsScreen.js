@@ -3,7 +3,7 @@ import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaVi
 import { AntDesign } from '@expo/vector-icons';
 import { auth, db } from '../firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, collection, query, getDocs, where } from 'firebase/firestore';
 
 const SettingsScreen = ({ navigation }) => {
   const [musicEnabled, setMusicEnabled] = useState(false);
@@ -33,6 +33,13 @@ const SettingsScreen = ({ navigation }) => {
   }, []);
 
   const handleUpdateField = async (field, newValue, currentValue) => {
+    // Regex to check if the name contains only letters and numbers
+    const validNameRegex = /^[a-zA-Z0-9]+$/;
+  
+    if (!validNameRegex.test(newValue.trim())) {
+      Alert.alert("Invalid Input", "Name must contain only letters and numbers.");
+      return;
+    }
     if (newValue.trim() === '') {
       Alert.alert("Invalid Input", "Name cannot be blank.");
       return;
@@ -45,6 +52,17 @@ const SettingsScreen = ({ navigation }) => {
       Alert.alert("Invalid Input", "Name cannot be longer than 15 characters.");
       return;
     }
+    // If the field being updated is 'username', check if it's already taken
+    if (field === 'username') {
+      const usersRef = collection(db, 'Users');
+      const querySnapshot = await getDocs(query(usersRef, where("username", "==", newValue.trim())));
+  
+      if (!querySnapshot.empty) {
+        Alert.alert("Username Taken", "This username is already in use by someone else.");
+        return;
+      }
+    }
+    // Proceed with updating the document
     const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(db, 'Users', user.uid);

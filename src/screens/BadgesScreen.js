@@ -31,7 +31,7 @@ const BadgesScreen = ({ navigation }) => {
     }
 
     const userData = userSnap.data();
-    console.log(`User data: ${JSON.stringify(userData)}`);
+    //console.log(`User data: ${JSON.stringify(userData)}`);
     
     if (!userData.badges) {
       console.log('User has no badges field.');
@@ -41,13 +41,13 @@ const BadgesScreen = ({ navigation }) => {
     // Fetch details for each badge
     const badgesDetails = await Promise.all(
       userData.badges.map(async (userBadge) => {
-        console.log(`Fetching badge with ID: ${userBadge.badgeId}`);
+        //console.log(`Fetching badge with ID: ${userBadge.badgeId}`);
         const badgeRef = doc(db, 'Badges', userBadge.badgeId);
         const badgeSnap = await getDoc(badgeRef);
         
         if (badgeSnap.exists()) {
           const badgeData = badgeSnap.data();
-          console.log(`Badge data: ${JSON.stringify(badgeData)}`);
+          //console.log(`Badge data: ${JSON.stringify(badgeData)}`);
           const tierInfo = badgeData.tiers.find(tier => tier.tier === userBadge.highestTierAchieved);
           
           return {
@@ -58,26 +58,31 @@ const BadgesScreen = ({ navigation }) => {
             imageURL: tierInfo.imageURL,
           };
         } else {
-          console.log(`No badge found with ID: ${userBadge.badgeId}`);
+          //console.log(`No badge found with ID: ${userBadge.badgeId}`);
           return null;
         }
       })
     );
 
-    console.log(`Badges details fetched: ${JSON.stringify(badgesDetails)}`);
+    //console.log(`Badges details fetched: ${JSON.stringify(badgesDetails)}`);
     return badgesDetails.filter(badge => badge !== null);
   };
 
-  const BadgeItem = ({ badge }) => (
-    <View style={styles.badgeItem}>
-      <Image
-        style={styles.badgeIcon}
-        source={{ uri: badge.imageURL }}
-      />
-      <Text style={styles.badgeTitle}>{badge.title} - Tier {badge.tier}</Text>
-      <Text style={styles.badgeDescription}>{badge.description}</Text>
-    </View>
-  );
+  const BadgeItem = ({ badge }) => {
+    return (
+      <View style={styles.badgeItem}>
+        <View style={styles.imageContainer}>
+          <Image
+            style={styles.badgeIcon}
+            source={{ uri: badge.imageURL }}
+            resizeMode="contain"
+          />
+        </View>
+        <Text style={styles.badgeTitle}>{badge.title} - Tier {badge.tier}</Text>
+        <Text style={styles.badgeDescription}>{badge.description}</Text>
+      </View>
+    );
+  };  
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
@@ -93,7 +98,10 @@ const BadgesScreen = ({ navigation }) => {
         renderItem={({ item }) => <BadgeItem badge={item} />}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContentContainer}
+        numColumns={1} // Set this to a fixed number that matches your desired column count
+        key={'_'} // Adding a fixed key prop for consistent rendering
       />
+
     </SafeAreaView>
   );
 };
@@ -126,33 +134,36 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   badgeItem: {
-    flexDirection: 'row', // Arrange image and text in a row
     alignItems: 'center',
-    marginVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    borderWidth: 3,
-    borderColor: '#ff6f00',
+    justifyContent: 'center',
+    marginBottom: 16,
+    padding: 16,
+  },
+  imageContainer: {
+    width: 120, // Set a fixed width
+    height: 120, // Set a fixed height
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden', // Ensures the image does not break out of the boundary
   },
   badgeIcon: {
-    width: 120, // Increase image size
-    height: 120, // Increase image size
-    resizeMode: 'contain',
+    width: 120, // New uniform width for all badges
+    height: 120, // New uniform height for all badges
+    resizeMode: 'contain', // This can be 'contain' or 'cover' depending on the desired effect
   },
   badgeTitle: {
-    fontSize: 18, // Increase font size
+    fontSize: 20, // Increase font size
     fontWeight: 'bold',
-    color: '#ff6f00', // Set text color
-    flexShrink: 1, // Ensure text doesn't push the layout
-    marginLeft: 12, // Add space between the image and text
+    color: '#ff6f00', // Keep this color or change as needed
+    textAlign: 'center',
+    marginTop: 8,
   },
   badgeDescription: {
-    fontSize: 14, // Increase font size
-    color: '#ff6f00', // Set text color
-    marginTop: 4,
     textAlign: 'center',
-    flexShrink: 1, // Ensure text doesn't push the layout
+    color: '#ff6f00', // Change text color to #ff6f00
+    fontSize: 18, // Increase font size
+    fontWeight: 'bold',
+    marginTop: 4,
   },
 });
 
