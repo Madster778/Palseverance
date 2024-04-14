@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 18,
     borderBottomWidth: 3,
-    borderBottomColor: '#fff', // Change to white to match the new header background
+    borderBottomColor: 'white', // Change to white to match the new header background
     backgroundColor: '#ff6f00', // Change to #ff6f00
   },
   headerTitle: {
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: '#fff', // Change text color to white
+    color: 'white', // Change text color to white
   },
   closeButton: {
     position: 'absolute',
@@ -99,23 +99,24 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   petImageContainer: {
-    position: 'relative',
+    width: 300, // Adjust as necessary for your layout
+    height: 300, // Adjust as necessary for your layout
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden', // This will hide any parts of the image that exceed the container size
   },
   petImage: {
-    width: 300,
-    height: 300,
-    marginBottom: 20,
-    marginLeft: -30,
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
   },
   glassesImage: {
     position: 'absolute',
-    width: 300,
-    height: 500,
+    width: 330, // Adjust as necessary
+    height: 500, // Adjust as necessary
     resizeMode: 'contain',
     top: -110,
-    left: -30,
+    left: -15,
   },
   infoText: {
     fontSize: 22,

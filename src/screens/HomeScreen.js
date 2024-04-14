@@ -10,7 +10,7 @@ function HomeScreen({ navigation }) {
   const [username, setUsername] = useState("Loading...");
   const [petName, setPetName] = useState("Loading...");
   const [happinessLevel, setHappinessLevel] = useState(100);
-  const [petColor, setPetColor] = useState('white');
+  const [petColor, setPetColor] = useState('grey');
   const [backgroundColour, setBackgroundColour] = useState('grey');
   const [hasGlasses, setHasGlasses] = useState(false);
   const [buttonsPressed, setButtonsPressed] = useState({});
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   petImage: {
-    width: 350,
-    height: 450,
+    width: 330,
+    height: 430,
     resizeMode: 'contain',
     marginLeft: 20,
   },
@@ -141,8 +141,8 @@ const styles = StyleSheet.create({
     width: 400, // Adjust as necessary
     height: 350,
     resizeMode: 'contain',
-    right: -25, // Move to the right side
-    bottom: 60,
+    right: -35, // Move to the right side
+    bottom: 55,
     marginTop: 10,
   },
   petName: {

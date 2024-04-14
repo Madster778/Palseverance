@@ -49,7 +49,7 @@ function LoginScreen({ navigation }) {
               ownedItems: [],
               equippedItems: {
                 backgroundColour: 'lightgrey',
-                petColour: 'white',
+                petColour: 'grey',
                 glasses: false,
               },
               settings: {

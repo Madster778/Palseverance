@@ -12,7 +12,7 @@ const SettingsScreen = ({ navigation }) => {
   const [newPetName, setNewPetName] = useState('');
   const [currentUsername, setCurrentUsername] = useState('');
   const [currentPetName, setCurrentPetName] = useState('');
-  const [backgroundColour, setBackgroundColour] = useState('white'); // For background color updates
+  const [backgroundColour, setBackgroundColour] = useState('lightgrey'); // For background color updates
 
   useEffect(() => {
     const user = auth.currentUser;

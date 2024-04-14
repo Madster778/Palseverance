@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   item: {
-    backgroundColor: 'white',
+    backgroundColor: '#ff6f00',
     borderRadius: 10,
-    borderColor: '#ff6f00', // Set the border color to white
+    borderColor: 'white', // Set the border color to white
     borderWidth: 3, // Set the border width, adjust as needed
     padding: 8, // Slightly reduced padding
     margin: 4, // Reduced margin to give more space
@@ -274,9 +274,10 @@ const styles = StyleSheet.create({
     minHeight: 160, // Adjust the minHeight to ensure items have enough space
   },
   itemName: {
-    fontSize: 16, // Adjusted font size if necessary
-    fontWeight: 'bold',
-    marginBottom: 4, // Adjusted spacing
+    fontSize: 18, // Increased font size
+    fontWeight: 'bold', // Make text bold
+    color: 'white', // Set text color to white
+    marginBottom: 8, // Increased space below the text
   },
   button: {
     backgroundColor: '#e7e7e7',
