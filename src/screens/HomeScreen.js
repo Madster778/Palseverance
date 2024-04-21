@@ -11,7 +11,7 @@ function HomeScreen({ navigation }) {
   const [petName, setPetName] = useState("Loading...");
   const [happinessLevel, setHappinessLevel] = useState(100);
   const [petColor, setPetColor] = useState('grey');
-  const [backgroundColour, setBackgroundColour] = useState('grey');
+  const [backgroundColour, setBackgroundColour] = useState('lightgrey');
   const [hasGlasses, setHasGlasses] = useState(false);
   const [buttonsPressed, setButtonsPressed] = useState({});
 
