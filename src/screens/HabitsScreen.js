@@ -4,11 +4,27 @@ import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
 import { doc, getDoc, onSnapshot, collection, addDoc, deleteDoc, orderBy, query, runTransaction } from 'firebase/firestore';
 
+const habitIdeas = [
+  'Review class notes for 30 minutes',
+  'Read a chapter of a career-related book',
+  'Exercise for at least 20 minutes',
+  'Practice a new language for 15 minutes',
+  'Meditate for 10 minutes each morning',
+  'Write a daily journal entry',
+  'Plan your tasks for the next day each evening',
+  'Cook a healthy meal',
+  'Spend 15 minutes on financial planning or budgeting',
+  'Read recent articles in your field',
+  'Practice coding or technical skills for 30 minutes',
+  'Reflect on your daily achievements',
+];
+
 const HabitsScreen = ({ navigation }) => {
   const [habits, setHabits] = useState([]);
   const [newHabitName, setNewHabitName] = useState('');
   const [currency, setCurrency] = useState(0);
   const [backgroundColor, setBackgroundColor] = useState('lightgrey'); // Default white background
+  const [suggestedHabit, setSuggestedHabit] = useState('');
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -35,6 +51,14 @@ const HabitsScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please enter a habit name');
       return;
     }
+  
+    // Check if habit already exists
+    const habitExists = habits.some(habit => habit.name.toLowerCase() === newHabitName.trim().toLowerCase());
+    if (habitExists) {
+      Alert.alert('Error', 'This habit already exists');
+      return;
+    }
+  
     try {
       await addDoc(collection(db, "Users", auth.currentUser.uid, "Habits"), {
         name: newHabitName,
@@ -176,6 +200,20 @@ const HabitsScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const handleIdeasPress = () => {
+    let randomIndex;
+    let newHabitIdea;
+    
+    // Ensure the random habit is not the same as the current one
+    do {
+      randomIndex = Math.floor(Math.random() * habitIdeas.length);
+      newHabitIdea = habitIdeas[randomIndex];
+    } while (newHabitIdea === newHabitName);
+    
+    setNewHabitName(newHabitIdea);
+  };
+  
+
   return (
     <SafeAreaView style={[styles.container, {backgroundColor: backgroundColor}]}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
@@ -195,13 +233,18 @@ const HabitsScreen = ({ navigation }) => {
           contentContainerStyle={styles.listContent}
         />
         <View style={styles.addNewHabitContainer}>
+          <TouchableOpacity style={styles.ideaButton} onPress={handleIdeasPress}>
+            <Text style={styles.ideaButtonText}>Ideas</Text>
+          </TouchableOpacity>
           <TextInput
             placeholder="Enter new habit"
             placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
             value={newHabitName}
             onChangeText={setNewHabitName}
             style={styles.newHabitInput}
-            autoCorrect={false}
+            multiline={true} // Allows for multiple lines
+            minHeight={40} // Minimum height for the TextInput
+            maxHeight={120} // Optional max height if you want to limit growth
           />
           <TouchableOpacity style={styles.addButton} onPress={addNewHabit}>
             <Text style={styles.addButtonText}>Add</Text>
@@ -260,6 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'white', // Update text color
     flex: 1,
+    marginRight: 10,
   },
   habitStreak: {
     color: 'white', // Update text color
@@ -278,6 +322,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  ideaButton: {
+    backgroundColor: '#ff6f00', // Button color
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    borderColor: 'white',
+    borderWidth: 3,
+    marginRight: 8, // Add some margin if needed
+  },
+  ideaButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
   newHabitInput: {
     fontSize: 16,

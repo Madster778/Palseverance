@@ -106,7 +106,10 @@ const MessageScreen = ({ navigation, route }) => {
             onChangeText={setNewMessage}
             style={styles.input}
             placeholder="Type a message..."
-            placeholderTextColor="#ff6f00" // Set placeholder text color to #ff6f00
+            placeholderTextColor="#ff6f00"
+            multiline={true} // Allows for multiple lines
+            minHeight={40} // Minimum height for the TextInput
+            maxHeight={120} // Maximum height for the TextInput to expand
           />
           <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
             <Ionicons name="send" size={24} color="#ff6f00" />
@@ -194,7 +197,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 40,
     paddingVertical: 10,
     paddingHorizontal: 15,
     backgroundColor: 'white',
