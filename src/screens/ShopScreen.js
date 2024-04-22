@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Flat
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
+import Sound from 'react-native-sound';
 
 const ShopScreen = ({ navigation }) => {
   const [shopItems, setShopItems] = useState([]);
