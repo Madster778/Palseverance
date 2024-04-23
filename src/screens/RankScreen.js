@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
@@ -28,6 +31,7 @@ const RankScreen = ({ navigation }) => {
     fetchUserData();
   }, []);
 
+  // Fetches ranking data based on the currently selected stat type
   const fetchRankingData = async (statType) => {
     const currentUserRef = doc(db, 'Users', auth.currentUser.uid);
     const currentUserSnap = await getDoc(currentUserRef);
@@ -39,6 +43,7 @@ const RankScreen = ({ navigation }) => {
   
     const currentUserData = { id: currentUserSnap.id, ...currentUserSnap.data() };
     
+    // Collects data from each friend listed in the current user's friends array
     const friendsDataPromises = currentUserData.friends.map(friendId =>
       getDoc(doc(db, 'Users', friendId))
     );
@@ -64,6 +69,7 @@ const RankScreen = ({ navigation }) => {
     setRankingData(rankedData);
   };  
 
+  // Effect to fetch data whenever the selected stat type changes
   useEffect(() => {
     const statType = statTypes[selectedTabIndex];
     fetchRankingData(statType);
@@ -73,6 +79,7 @@ const RankScreen = ({ navigation }) => {
     setSelectedTabIndex(index);
   };
 
+  // Renders individual rank items, navigable to user profiles
   const RankItem = ({ id, rank, username, currentStreak, longestStreak, currencyEarned }) => (
   <TouchableOpacity
     style={styles.rankItem}
@@ -123,7 +130,6 @@ const RankScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white', // or your preferred background color
   },
   header: {
     flexDirection: 'row',
@@ -132,85 +138,84 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: '#fff', // Changed to white
-    backgroundColor: '#ff6f00', // Changed to #ff6f00
-    marginBottom: 10, // Add a bottom margin to create a gap after the header
+    borderBottomColor: 'white', 
+    backgroundColor: '#ff6f00', 
+    marginBottom: 10,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff', // Changed to white
+    color: 'white',
   },
   closeButton: {
     padding: 10,
   },
   tabsContainerStyle: {
-    marginVertical: 10, // Adjust as needed
-    marginHorizontal: 20, // Adjust as needed
-    alignSelf: 'center', // Center the control tab in the view
-    width: '90%', // Match the width to the rankItem width
+    marginVertical: 10,
+    marginHorizontal: 20, 
+    alignSelf: 'center', 
+    width: '90%',
   },
   tabStyle: {
-    borderColor: '#ff6f00', // Border color for the tabs
-    backgroundColor: 'white', // Background color for the tabs
+    borderColor: '#ff6f00',
+    backgroundColor: 'white',
   },
   activeTabStyle: {
-    backgroundColor: '#ff6f00', // Background color for the active tab
+    backgroundColor: '#ff6f00', 
   },
   tabTextStyle: {
-    color: '#ff6f00', // Text color for the tabs
+    color: '#ff6f00',
   },
   activeTabTextStyle: {
-    color: 'white', // Text color for the active tab
+    color: 'white',
   },
   rankItem: {
-    backgroundColor: '#ff6f00', // Rank item background color
-    marginVertical: 8, // Space between items
-    marginHorizontal: 16, // Space from the sides
-    borderRadius: 10, // Rounded corners
-    borderWidth: 3, // Add a border width for the white border
-    borderColor: 'white', // Border color set to white
+    backgroundColor: '#ff6f00', 
+    marginVertical: 8,
+    marginHorizontal: 16, 
+    borderRadius: 10,
+    borderWidth: 3,
+    borderColor: 'white', 
     paddingVertical: 15,
     paddingHorizontal: 20,
     width: '90%',
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'center', // Center the rank item in the view
-    justifyContent: 'space-around', // Adjusts spacing to distribute space around items
+    alignSelf: 'center',
+    justifyContent: 'space-around',
   },
   rankCircle: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'white', // Rank circle background color
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   rankNumber: {
-    color: '#ff6f00', // Rank number text color
+    color: '#ff6f00',
     fontWeight: 'bold',
-    marginLeft: 'auto',  // Ensures the username starts after the rank circle
-    marginRight: 'auto', // Ensures the username is centered within the available space
+    marginLeft: 'auto',  
+    marginRight: 'auto', 
   },
   rankName: {
     fontSize: 18,
     fontWeight: '500',
     color: 'white',
-    textAlign: 'center', // This will align text to center for the given space
-    flex: 1, // This will allow the name to take up as much space as possible
+    textAlign: 'center',
+    flex: 1,
   },
   rankStat: {
-    position: 'relative', // Change from absolute to relative
-    right: 20, // Position from the right
-    marginLeft: 10, // Adjust space between the stats and the username
+    position: 'relative',
+    right: 20,
+    marginLeft: 10,
     fontWeight: 'bold',
-    color: 'white', // Text color for the stats
+    color: 'white',
   },
   listContentContainer: {
     paddingBottom: 20,
   },
-  // Add other styles as needed for your UI
 });
 
 export default RankScreen;

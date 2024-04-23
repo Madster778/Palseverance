@@ -1,3 +1,7 @@
+// Reference Firebase documentation: https://firebase.google.com/docs
+// Reference Firebase Firestore documentation for detailed API usage:
+// https://firebase.google.com/docs/firestore
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
@@ -6,6 +10,7 @@ admin.initializeApp();
 // Import logger for logging messages
 const logger = require("firebase-functions/logger");
 
+// Scheduled function to update habit status and user happiness daily.
 exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
 .timeZone('Europe/London')
 .onRun(async () => {
@@ -25,7 +30,6 @@ exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
       const lastUpdated = habit.lastUpdated.toDate();
       const now = new Date();
 
-      // Check if habit was completed today
       if (habit.status === 'complete' && lastUpdated.setHours(0,0,0,0) === now.setHours(0,0,0,0)) {
         completedHabitsToday++;
         if (habit.streak > longestCurrentStreak) {
@@ -33,16 +37,16 @@ exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
         }
       }
 
+      // Resets the habit status to pending and calculates the streaks and happiness meter reduction.
       if (habit.status === 'pending') {
         pendingCount++;
-        // Reset streak for pending habits
         habitDoc.ref.update({ streak: 0, status: 'pending' });
       } else if (habit.status === 'complete') {
-        // Set complete habits to pending for the next day
         habitDoc.ref.update({ status: 'pending' });
       }
     });
 
+    // Calculates new happiness based on pending habits and updates user data.
     const totalHappinessReduction = pendingCount * 10;
     const newHappiness = Math.max((userDoc.data().happinessMeter || 100) - totalHappinessReduction, 0);
 
@@ -50,15 +54,12 @@ exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
       happinessMeter: newHappiness
     };
 
-    // If no habits were completed today, reset the longest current streak
     if (completedHabitsToday === 0) {
       userUpdates.longestCurrentStreak = 0;
     } else {
-      // Update the longest current streak if there's a new maximum
       userUpdates.longestCurrentStreak = longestCurrentStreak;
     }
 
-    // Execute user update
     userDoc.ref.update(userUpdates);
 
     console.log(`User ${userDoc.id} updated: happiness and habit streaks reset. Longest current streak updated.`);
@@ -67,15 +68,14 @@ exports.updateHabitStatusAndHappiness = functions.pubsub.schedule('0 0 * * *')
   console.log('All habit statuses, user happiness levels, and longest current streaks updated.');
 });
 
-
+// Cloud function to handle sending friend requests, ensuring users are authenticated.
 exports.sendFriendRequest = functions.https.onCall(async (data, context) => {
-  // Ensure authenticated user
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to send friend requests.');
   }
 
-  const requesterId = context.auth.uid; // ID of the user sending the request
-  const { recipientId } = data; // ID of the user receiving the request
+  const requesterId = context.auth.uid; 
+  const { recipientId } = data; 
 
   const db = admin.firestore();
   const requesterRef = db.collection('Users').doc(requesterId);
@@ -98,7 +98,8 @@ exports.sendFriendRequest = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.acceptFriendRequest = functions.https.onCall(async (data, context) => {
+// Accepts friend requests and establishes a chat session between users.
+exports.acceptFriendRequest = functions.https.onCall(async (data) => {
   const { requesterId, recipientId } = data;
 
   const db = admin.firestore();
@@ -112,12 +113,10 @@ exports.acceptFriendRequest = functions.https.onCall(async (data, context) => {
       const requesterDoc = await transaction.get(requesterRef);
       const recipientDoc = await transaction.get(recipientRef);
 
-      // Ensure both users exist
       if (!requesterDoc.exists || !recipientDoc.exists) {
         throw new functions.https.HttpsError('failed-precondition', 'One or both of the users do not exist.');
       }
 
-      // Update the requester's and recipient's documents to reflect the new friendship
       transaction.update(requesterRef, {
         outgoingRequests: admin.firestore.FieldValue.arrayRemove(recipientId),
         friends: admin.firestore.FieldValue.arrayUnion(recipientId),
@@ -127,12 +126,9 @@ exports.acceptFriendRequest = functions.https.onCall(async (data, context) => {
         friends: admin.firestore.FieldValue.arrayUnion(requesterId),
       });
 
-      // Create a chat document for the new friends
       const chatRef = db.collection('Chats').doc();
       chatId = chatRef.id;
-      transaction.set(chatRef, {
-        participants: [requesterId, recipientId],
-      });
+      transaction.set(chatRef, {participants: [requesterId, recipientId],});
     });
 
     console.log(`Friend request accepted between ${requesterId} and ${recipientId}, chat created with ID: ${chatId}`);
@@ -143,7 +139,8 @@ exports.acceptFriendRequest = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.rejectFriendRequest = functions.https.onCall(async (data, context) => {
+// Rejects a friend request, ensuring the operation is atomic using a transaction.
+exports.rejectFriendRequest = functions.https.onCall(async (data) => {
   const { requesterId, recipientId } = data;
 
   const db = admin.firestore();
@@ -169,15 +166,14 @@ exports.rejectFriendRequest = functions.https.onCall(async (data, context) => {
   }
 });
 
+// Removes friends when any user terminated their friendship
 exports.removeFriend = functions.https.onCall(async (data, context) => {
-  // Ensure the initiating user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'The user must be authenticated to remove friends.');
   }
 
-  const { initiatorId, friendId } = data; // IDs of the users involved in the friendship
+  const { initiatorId, friendId } = data; 
 
-  // Make sure the initiatorId matches the authenticated user to prevent unauthorized removals
   if (context.auth.uid !== initiatorId) {
     throw new functions.https.HttpsError('permission-denied', 'The user does not have permission to remove this friend.');
   }
@@ -195,12 +191,10 @@ exports.removeFriend = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('not-found', 'One or both users do not exist.');
       }
 
-      // Remove friendId from the initiator's friend list
       transaction.update(initiatorRef, {
         friends: admin.firestore.FieldValue.arrayRemove(friendId),
       });
 
-      // Remove initiatorId from the friend's friend list
       transaction.update(friendRef, {
         friends: admin.firestore.FieldValue.arrayRemove(initiatorId),
       });
@@ -214,6 +208,7 @@ exports.removeFriend = functions.https.onCall(async (data, context) => {
   }
 });
 
+// Deletes user chat messages in a batch to ensure all related data is removed upon friendship termination.
 exports.deleteUserChatMessages = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to delete chats and messages.');
@@ -231,20 +226,17 @@ exports.deleteUserChatMessages = functions.https.onCall(async (data, context) =>
 
     for (const chatDoc of chatsSnapshot.docs) {
       const participants = chatDoc.data().participants;
-      // Ensure the chat includes both userId1 and userId2
       if (participants.includes(userId1) && participants.includes(userId2)) {
-        // Query all messages in the chat's subcollection
         const messagesSnapshot = await chatDoc.ref.collection('Messages').get();
         messagesSnapshot.forEach(msgDoc => {
-          batch.delete(msgDoc.ref); // Queue each message for deletion
+          batch.delete(msgDoc.ref); 
         });
 
-        // Queue the chat document for deletion
         batch.delete(chatDoc.ref);
       }
     }
 
-    await batch.commit(); // Execute batch deletion
+    await batch.commit();
     console.log('Chat and messages between the users have been successfully deleted.');
     return { success: true, message: 'Chat and messages deleted successfully.' };
   } catch (error) {

@@ -1,9 +1,12 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { AntDesign } from '@expo/vector-icons'; // Import AntDesign
+import { AntDesign } from '@expo/vector-icons';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
-import petImages from '../utils/petImages'; // Ensure this is correctly imported
+import petImages from '../utils/petImages';
 
 const ProfileScreen = ({ navigation, route }) => {
   const [userData, setUserData] = useState(null);
@@ -36,7 +39,7 @@ const ProfileScreen = ({ navigation, route }) => {
   // Select pet image based on equipped color and add default fallback
   const petColorKey = userData.equippedItems?.petColour
     ? `${userData.equippedItems.petColour}Happy`
-    : 'whiteHappy'; // Match the 'happy' key for a white pet in your petImages.js
+    : 'whiteHappy';
   const petImageSrc = petImages[petColorKey];
 
   return (
@@ -78,15 +81,15 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 18,
     borderBottomWidth: 3,
-    borderBottomColor: 'white', // Change to white to match the new header background
-    backgroundColor: '#ff6f00', // Change to #ff6f00
+    borderBottomColor: 'white',
+    backgroundColor: '#ff6f00',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: 'white', // Change text color to white
+    color: 'white', 
   },
   closeButton: {
     position: 'absolute',
@@ -99,11 +102,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   petImageContainer: {
-    width: 300, // Adjust as necessary for your layout
-    height: 300, // Adjust as necessary for your layout
+    width: 300, 
+    height: 300,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden', // This will hide any parts of the image that exceed the container size
+    overflow: 'hidden', 
   },
   petImage: {
     width: '100%',
@@ -112,8 +115,8 @@ const styles = StyleSheet.create({
   },
   glassesImage: {
     position: 'absolute',
-    width: 330, // Adjust as necessary
-    height: 500, // Adjust as necessary
+    width: 330, 
+    height: 500,
     resizeMode: 'contain',
     top: -110,
     left: -15,

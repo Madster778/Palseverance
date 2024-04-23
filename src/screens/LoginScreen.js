@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, ActivityIndicator } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
@@ -13,19 +16,20 @@ function LoginScreen({ navigation }) {
 
   React.useEffect(() => {
     if (response?.type === 'success') {
-      setIsLoading(true); // Start loading
+      setIsLoading(true); // Trigger loading state when authentication is successful
       const { id_token } = response.params;
-      const googleCredential = GoogleAuthProvider.credential(id_token);
+      const googleCredential = GoogleAuthProvider.credential(id_token); // Create a Google credential with the ID token
       
+      // Attempt to sign in with the obtained Google credential
       signInWithCredential(auth, googleCredential)
         .then(async (authResult) => {
           const userRef = doc(db, 'Users', authResult.user.uid);
           const userSnap = await getDoc(userRef);
         
-          // Split the displayName by space. Assume first part is the first name, and the rest is the last name.
+          // Process the display name to separate first and last names then join the names back if possible
           const nameParts = authResult.user.displayName.split(' ');
           const firstName = nameParts[0];
-          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''; // Join back the rest if there are multiple parts, else set lastName to empty string
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
         
           const initialBadges = [
             { badgeId: "habitStreak", highestTierAchieved: 0 },
@@ -33,6 +37,7 @@ function LoginScreen({ navigation }) {
             { badgeId: "collector", highestTierAchieved: 0 }
           ];
           
+          // If the user document doesn't exist, initialise it with default values
           if (!userSnap.exists()) {
             await setDoc(userRef, {
               username: authResult.user.displayName || firstName,
@@ -45,27 +50,23 @@ function LoginScreen({ navigation }) {
               longestObtainedStreak: 0,
               happinessMeter: 100,
               friends: [],
-              badges: initialBadges, // Include the initial badges here
+              badges: initialBadges,
               ownedItems: [],
               equippedItems: {
                 backgroundColour: 'lightgrey',
                 petColour: 'grey',
                 glasses: false,
               },
-              settings: {
-                musicEnabled: true,
-                soundEnabled: true,
-              },
               incomingRequests: [],
               outgoingRequests: []
             });
           }
-          setIsLoading(false); // End loading
-          navigation.replace('Home');
+          setIsLoading(false);  // Reset loading state
+          navigation.replace('Home');  // Navigate to the Home screen after successful login and initialization
         })
         .catch(error => {
-          console.error(error);
-          setIsLoading(false); // End loading on error
+          console.error(error);  // Log any errors
+          setIsLoading(false);  // Reset loading state in case of an error
         });
     }
   }, [response, navigation]);
@@ -73,7 +74,8 @@ function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/images/palseverance-logo.png')} // Replace with your actual logo path
+        // Logo was created using https://www.logomaker.com
+        source={require('../assets/images/palseverance-logo.png')} 
         style={styles.logo}
         resizeMode="contain"
       />
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: width * 0.6,
-    height: width * 0.6 * (171 / 250), // Keep the logo aspect ratio
+    height: width * 0.6 * (171 / 250),
   },
   tagline: {
     fontSize: 18,
@@ -122,7 +124,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   buttonText: {
-    color: '#ffffff',
+    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },

@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, Modal, Alert } from 'react-native';
 import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
@@ -10,11 +13,12 @@ const InboxScreen = ({ navigation }) => {
   const [key, setKey] = useState(0);
   const [username, setUsername] = useState('');
   const [incomingRequests, setIncomingRequests] = useState([]);
-  const [friendsList, setFriendsList] = useState([]); // State to store friends list
-  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); // Default background color
+  const [friendsList, setFriendsList] = useState([]);
+  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); 
   const functions = getFunctions();
   const [resolvedUsernames, setResolvedUsernames] = useState({});
 
+  // Subscribe to the current user's document for real-time updates
   useEffect(() => {
     if (!auth.currentUser) return;
     const userRef = doc(db, 'Users', auth.currentUser.uid);
@@ -35,6 +39,7 @@ const InboxScreen = ({ navigation }) => {
     return unsubscribe;
   }, []);
 
+  // Listener to force a component re-render when it comes into focus
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
       setKey(prevKey => prevKey + 1);
@@ -47,10 +52,12 @@ const InboxScreen = ({ navigation }) => {
     resolveUsernames(friendsList);
   }, [friendsList]);
 
+  // Effect to resolve usernames whenever there's a change in incoming requests or friends list
   useEffect(() => {
     resolveUsernames([...incomingRequests, ...friendsList]);
   }, [incomingRequests, friendsList]);
 
+  // Function to resolve user IDs to usernames
   const resolveUsernames = async (userIds) => {
     const usersCollectionRef = collection(db, 'Users');
     let usernamesMap = { ...resolvedUsernames };
@@ -137,7 +144,7 @@ const InboxScreen = ({ navigation }) => {
     const acceptRequest = httpsCallable(functions, 'acceptFriendRequest');
     acceptRequest({ requesterId, recipientId: auth.currentUser.uid })
     .then((result) => {
-      console.log(result.data); // Success
+      console.log(result.data);
     })
     .catch((error) => {
       console.error("Error accepting friend request: ", error.message);
@@ -149,7 +156,7 @@ const InboxScreen = ({ navigation }) => {
     const rejectRequest = httpsCallable(functions, 'rejectFriendRequest');
     rejectRequest({ requesterId, recipientId: auth.currentUser.uid })
       .then((result) => {
-        console.log(result.data); // Success
+        console.log(result.data);
       })
       .catch((error) => {
         console.error("Error rejecting friend request: ", error.message);
@@ -174,35 +181,31 @@ const InboxScreen = ({ navigation }) => {
   };
   
   const confirmRemoveFriend = async (friendId) => {
+    // Remove the friend from the user's friend list calling the removeFriend Cloud Function
     const removeFriendFunction = httpsCallable(functions, 'removeFriend');
     try {
-      // First, remove the friend from the user's friend list
       const removeFriendResult = await removeFriendFunction({
           initiatorId: auth.currentUser.uid, 
           friendId
       });
             if (removeFriendResult.data.success) {
-          // Then, delete the chat and messages between the two users
-          const deleteUserChatMessages = httpsCallable(functions, 'deleteUserChatMessages'); // Use the correct name of your Cloud Function
+          // Delete the chat and messages between the two users calling the deleteUserChatMessages Cloud Funtion
+          const deleteUserChatMessages = httpsCallable(functions, 'deleteUserChatMessages'); 
           const deleteUserChatMessagesResult = await deleteUserChatMessages({
               userId1: auth.currentUser.uid,
               userId2: friendId
           });
           
           if (deleteUserChatMessagesResult.data.success) {
-              // If chat and messages are successfully deleted, update the UI
               setFriendsList(currentList => currentList.filter(id => id !== friendId));
               Alert.alert('Success', 'Friend and chat history removed successfully.');
           } else {
-              // Handle failure to delete chat and messages
               Alert.alert('Error', deleteUserChatMessagesResult.data.error || 'Failed to delete chat and messages.');
           }
       } else {
-          // Handle failure to remove friend
           Alert.alert('Error', removeFriendResult.data.error || 'Failed to remove friend.');
       }
     } catch (error) {
-        // Handle errors in the overall operation
         Alert.alert('Error', error.message || 'An error occurred while removing the friend and chat.');
     }
   };
@@ -220,15 +223,13 @@ const InboxScreen = ({ navigation }) => {
       if (chatDoc) {
         chatId = chatDoc.id;
       } else {
-        // No chat found, create a new chat document
         const docRef = await addDoc(chatsRef, {
           participants: [auth.currentUser.uid, friendUserId],
-          messages: [], // Initialize with empty messages
+          messages: [],
         });
         chatId = docRef.id;
       }
   
-      // Retrieve the friend's username from the users collection
       const userDoc = await getDoc(doc(db, 'Users', friendUserId));
       const friendUsername = userDoc.exists() ? userDoc.data().username : null;
   
@@ -241,7 +242,6 @@ const InboxScreen = ({ navigation }) => {
           friendUserId: friendUserId
         });
       } else {
-        // Handle the case where the username could not be found
         console.error('Failed to retrieve friend username');
         Alert.alert('Error', 'Failed to retrieve friend username.');
       }
@@ -350,13 +350,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: '#fff', // Changed to white
-    backgroundColor: '#ff6f00', // Changed to #ff6f00
+    borderBottomColor: 'white', 
+    backgroundColor: '#ff6f00',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff', // Changed to white
+    color: 'white',
   },
   closeButton: {
     padding: 10,
@@ -364,30 +364,30 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     padding: 16,
-    justifyContent: 'space-between', // Adjust the alignment of children
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   searchInput: {
-    flex: 2, // Adjust the flex to control the width of the input
+    flex: 2,
     backgroundColor: 'white',
     borderColor: '#ff6f00',
     borderWidth: 3,
-    height: 50, // Set the fixed height here
+    height: 50,
     padding: 10,
     marginHorizontal: 8,
     color: '#ff6f00',
-    borderRadius: 5, // Less rounded corners
+    borderRadius: 5,
   },
   button: {
-    alignItems: 'center', // Center items horizontally
-    justifyContent: 'center', // Center items vertically
+    alignItems: 'center',
+    justifyContent: 'center', 
     paddingHorizontal: 16,
-    paddingVertical: 0, // Set paddingVertical to 0 and control the height directly
+    paddingVertical: 0,
     backgroundColor: '#ff6f00',
     borderRadius: 5,
     marginHorizontal: 4,
-    width: 110, // Adjust width as needed
-    height: 50, // Match the height of the TextInput
+    width: 110,
+    height: 50,
   },
   buttonText: {
     color: 'white',
@@ -395,29 +395,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   viewRequestButton: {
-    // Remove flex and use width instead for explicit sizing
-    width: 100, // Set a fixed width
+    width: 100,
     borderRadius: 5,
     borderColor: 'white',
     borderWidth: 3,
   },
   sendRequestButton: {
-    // Remove flex and use width instead for explicit sizing
-    width: 100, // Set a fixed width
+    width: 100,
     borderRadius: 5,
     borderColor: 'white',
     borderWidth: 3,
   },
   friendItemContainer: {
-    backgroundColor: '#ff6f00', // Use your theme color here
-    borderRadius: 10, // Same roundness as your habit items
+    backgroundColor: '#ff6f00', 
+    borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginVertical: 8,
     alignSelf: 'center',
     width: '90%',
-    borderWidth: 3, // Add a border width for the white border
-    borderColor: 'white', // Border color set to white
+    borderWidth: 3, 
+    borderColor: 'white',
   },
   friendItem: {
     flexDirection: 'row',
@@ -425,12 +423,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   friendName: {
-    fontSize: 18, // Larger font size for the username
-    color: 'white', // Username text color
-    flex: 1, // Allows the name to expand and fill the space
+    fontSize: 18,
+    color: 'white', 
+    flex: 1,
   },
   friendDelete: {
-    // Style for the delete button, aligning with your habit delete button
     marginLeft: 'auto',
     padding: 8,
   },
@@ -441,12 +438,12 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
-    marginTop: 50, // Push down from the top
-    width: '95%', // Increase width if necessary
-    backgroundColor: '#ff6f00', // Set the modal background color
+    marginTop: 50,
+    width: '95%', 
+    backgroundColor: '#ff6f00', 
     borderRadius: 20,
-    borderColor: 'white', // Set the border color to white
-    borderWidth: 3, // Set the border width, adjust as needed
+    borderColor: 'white', 
+    borderWidth: 3,
     padding: 25,
     alignItems: 'center',
     shadowColor: '#000',
@@ -462,14 +459,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     alignSelf: 'flex-start',
-    marginBottom: 20, // Space between title and content
-    color: 'white', // Set title color to white
+    marginBottom: 20,
+    color: 'white',
   },
   modalCloseButton: {
     position: 'absolute',
     right: 20,
     top: 20,
-    color: 'white', // Set close button color to white
+    color: 'white',
   },
   modalContentContainer: {
     width: '100%',
@@ -478,7 +475,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'white', // Set the friend request box color to white
+    backgroundColor: 'white',
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -489,33 +486,33 @@ const styles = StyleSheet.create({
   friendRequestName: {
     fontWeight: 'bold',
     fontSize: 16,
-    color: '#ff6f00', // Set username text color
-    alignSelf: 'center', // Align the text vertically
+    color: '#ff6f00',
+    alignSelf: 'center',
   },
   friendRequestButtons: {
     flexDirection: 'row',
-    marginLeft: 'auto', // Push the buttons to the end of the container
+    marginLeft: 'auto',
   },
   noRequestsText: {
-    fontSize: 18, // Make the font size larger as needed
-    color: 'white', // Set the text color to white
-    textAlign: 'center', // Center the text horizontally
-    marginTop: 20, // Add some space above the text if needed
+    fontSize: 18,
+    color: 'white',
+    textAlign: 'center', 
+    marginTop: 20, 
   },
   acceptButton: {
     backgroundColor: '#34C759',
     borderRadius: 5,
     paddingVertical: 8,
-    paddingHorizontal: 12, // Reduce padding to decrease width
-    marginRight: 8, // Space between the ACCEPT and DECLINE buttons
-    minWidth: 80, // Set a minimum width for the buttons
+    paddingHorizontal: 12, 
+    marginRight: 8,
+    minWidth: 80,
   },
   rejectButton: {
     backgroundColor: '#FF3B30',
     borderRadius: 5,
     paddingVertical: 8,
-    paddingHorizontal: 12, // Reduce padding to decrease width
-    minWidth: 80, // Set a minimum width for the buttons
+    paddingHorizontal: 12,
+    minWidth: 80,
   },
 });
 

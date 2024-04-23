@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
@@ -23,9 +26,9 @@ const HabitsScreen = ({ navigation }) => {
   const [habits, setHabits] = useState([]);
   const [newHabitName, setNewHabitName] = useState('');
   const [currency, setCurrency] = useState(0);
-  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); // Default white background
-  const [suggestedHabit, setSuggestedHabit] = useState('');
+  const [backgroundColor, setBackgroundColor] = useState('lightgrey');
 
+  // Fetch user-specific data and listen to changes in real-time.
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
@@ -52,7 +55,6 @@ const HabitsScreen = ({ navigation }) => {
       return;
     }
   
-    // Check if habit already exists
     const habitExists = habits.some(habit => habit.name.toLowerCase() === newHabitName.trim().toLowerCase());
     if (habitExists) {
       Alert.alert('Error', 'This habit already exists');
@@ -74,9 +76,8 @@ const HabitsScreen = ({ navigation }) => {
     }
   };
 
-  // Prompt for habit completion
+  // Confirm completion of a habit and update state accordingly.
   const confirmHabitCompletion = async (habit) => {
-    // Ensure habit is defined and has a lastUpdated field
     if (!habit || !habit.lastUpdated) {
       console.error("No lastUpdated field for habit:", habit);
       Alert.alert("Error", "Habit data is incomplete.");
@@ -84,7 +85,7 @@ const HabitsScreen = ({ navigation }) => {
     }
   
     const now = new Date();
-    const lastUpdated = habit.lastUpdated.toDate(); // Convert Firestore Timestamp to JavaScript Date
+    const lastUpdated = habit.lastUpdated.toDate();
     const diffDays = Math.floor((now - lastUpdated) / (1000 * 60 * 60 * 24));
   
     if (habit.status === "complete" && diffDays < 1) {
@@ -117,6 +118,7 @@ const HabitsScreen = ({ navigation }) => {
     return highestTier ? highestTier.tier : null;
   };
 
+  // Function to handle habit completion and update related data.
   const completeHabit = async (habitId) => {
     const userRef = doc(db, 'Users', auth.currentUser.uid);
     const habitRef = doc(db, 'Users', auth.currentUser.uid, 'Habits', habitId);
@@ -134,12 +136,11 @@ const HabitsScreen = ({ navigation }) => {
       const newHappiness = Math.min(userDoc.data().happinessMeter + 5, 100);
       const totalCurrencyEarned = (userDoc.data().totalCurrencyEarned || 0) + currencyIncrement;
 
-      // Check for new badge tiers
+      // Check and update badge tiers based on new streaks and currency.
       const habitStreakBadgeTier = await checkForNewBadgeTier(auth.currentUser.uid, 'habitStreak', newStreak);
       const wealthBuilderBadgeTier = await checkForNewBadgeTier(auth.currentUser.uid, 'wealthBuilder', totalCurrencyEarned);
       const userBadges = userDoc.data().badges || [];
 
-      // Update habit streak badge if a new tier was reached
       if (habitStreakBadgeTier !== null) {
         const habitStreakBadgeIndex = userBadges.findIndex(badge => badge.badgeId === 'habitStreak');
         if (habitStreakBadgeIndex !== -1) {
@@ -149,7 +150,6 @@ const HabitsScreen = ({ navigation }) => {
         }
       }
 
-      // Update wealth builder badge if a new tier was reached
       if (wealthBuilderBadgeTier !== null) {
         const wealthBuilderBadgeIndex = userBadges.findIndex(badge => badge.badgeId === 'wealthBuilder');
         if (wealthBuilderBadgeIndex !== -1) {
@@ -159,24 +159,22 @@ const HabitsScreen = ({ navigation }) => {
         }
       }
 
-      // Update the habit document
       transaction.update(habitRef, {
         streak: newStreak,
         status: "complete",
         lastUpdated: new Date()
       });
 
-      // Update the user document
       transaction.update(userRef, {
         currency: newCurrency,
         happinessMeter: newHappiness,
         totalCurrencyEarned: totalCurrencyEarned,
-        badges: userBadges // Update badgesEarned
+        badges: userBadges
       });
     });
   };
 
-  // Delete a habit from Firestore
+  // Function to delete a habit from Firestore.
   const deleteHabit = async (habitId) => {
     Alert.alert('Delete Habit', 'Are you sure you want to delete this habit?', [
       { text: 'Cancel' },
@@ -189,7 +187,7 @@ const HabitsScreen = ({ navigation }) => {
     ]);
   };
 
-  // Render each habit item
+  // Render function for each habit item in the list.
   const renderHabitItem = ({ item }) => (
     <TouchableOpacity style={styles.habitItem} onPress={() => confirmHabitCompletion(item)}>
       <Text style={styles.habitName}>{item.name}</Text>
@@ -238,13 +236,13 @@ const HabitsScreen = ({ navigation }) => {
           </TouchableOpacity>
           <TextInput
             placeholder="Enter new habit"
-            placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
+            placeholderTextColor="#ff6f00"
             value={newHabitName}
             onChangeText={setNewHabitName}
             style={styles.newHabitInput}
-            multiline={true} // Allows for multiple lines
-            minHeight={40} // Minimum height for the TextInput
-            maxHeight={120} // Optional max height if you want to limit growth
+            multiline={true}
+            minHeight={40}
+            maxHeight={120} 
           />
           <TouchableOpacity style={styles.addButton} onPress={addNewHabit}>
             <Text style={styles.addButtonText}>Add</Text>
@@ -266,13 +264,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: '#fff', // Change to white
-    backgroundColor: '#ff6f00', // Change to #ff6f00
+    borderBottomColor: 'white', 
+    backgroundColor: '#ff6f00', 
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff', // Change to white
+    color: 'white', 
   },
   currencyContainer: {
     position: 'absolute',
@@ -284,7 +282,7 @@ const styles = StyleSheet.create({
   currencyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white', // Currency text color to white
+    color: 'white', 
   },
   habitItem: {
     flexDirection: 'row',
@@ -301,12 +299,12 @@ const styles = StyleSheet.create({
   },
   habitName: {
     fontSize: 18,
-    color: 'white', // Update text color
+    color: 'white',
     flex: 1,
     marginRight: 10,
   },
   habitStreak: {
-    color: 'white', // Update text color
+    color: 'white', 
     marginRight: 10,
     fontSize: 16,
   },
@@ -324,13 +322,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ideaButton: {
-    backgroundColor: '#ff6f00', // Button color
+    backgroundColor: '#ff6f00', 
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
     borderColor: 'white',
     borderWidth: 3,
-    marginRight: 8, // Add some margin if needed
+    marginRight: 8, 
   },
   ideaButtonText: {
     color: 'white',
@@ -345,10 +343,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 5,
     flex: 1,
-    color: '#ff6f00', // Set text input color to match
+    color: '#ff6f00', 
   },
   addButton: {
-    backgroundColor: '#ff6f00', // Button color
+    backgroundColor: '#ff6f00',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -360,8 +358,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    paddingBottom: 60, // Increase bottom padding to ensure list content does not overlap with the input field and button
-    paddingTop: 20, // Ensures there's a gap between the header and the first habit
+    paddingBottom: 60, 
+    paddingTop: 20,
   },
 });
 

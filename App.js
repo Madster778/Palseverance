@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Base template for all screen css was inspired through the help of ChatGPT
+
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -23,7 +26,7 @@ function App() {
   useEffect(() => {
     // Check if user is signed in on app start
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsUserSignedIn(!!user); // !! converts truthy/falsy to boolean true/false
+      setIsUserSignedIn(!!user);
       setLoading(false); // Set loading to false once the user's sign-in status is resolved
     });
 
@@ -57,7 +60,6 @@ function App() {
             <Stack.Screen name="Rank" component={RankScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
-            {/* Add more screens as needed */}
           </>
         ) : (
           // Auth screens

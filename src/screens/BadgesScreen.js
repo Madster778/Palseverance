@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, Image, StatusBar } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
@@ -6,9 +9,10 @@ import { doc, getDoc } from 'firebase/firestore';
 
 const BadgesScreen = ({ navigation }) => {
   const [badges, setBadges] = useState([]);
-  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); // Default color
+  const [backgroundColor, setBackgroundColor] = useState('lightgrey'); 
   const userId = auth.currentUser.uid;
 
+  // Loads user-specific data and their associated badges on component mount
   useEffect(() => {
     const userRef = doc(db, 'Users', userId);
     getDoc(userRef).then((docSnap) => {
@@ -20,6 +24,7 @@ const BadgesScreen = ({ navigation }) => {
     fetchUserBadges(userId).then(setBadges);
   }, []);
 
+  // Fetches detailed information on user badges, including descriptions and tiers
   const fetchUserBadges = async (userId) => {
     console.log(`Fetching badges for user: ${userId}`);
     const userRef = doc(db, 'Users', userId);
@@ -68,6 +73,7 @@ const BadgesScreen = ({ navigation }) => {
     return badgesDetails.filter(badge => badge !== null);
   };
 
+  // Component to render individual badge details
   const BadgeItem = ({ badge }) => {
     return (
       <View style={styles.badgeItem}>
@@ -98,8 +104,8 @@ const BadgesScreen = ({ navigation }) => {
         renderItem={({ item }) => <BadgeItem badge={item} />}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContentContainer}
-        numColumns={1} // Set this to a fixed number that matches your desired column count
-        key={'_'} // Adding a fixed key prop for consistent rendering
+        numColumns={1}
+        key={'_'}
       />
 
     </SafeAreaView>
@@ -118,13 +124,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: 'white', // Change to white
-    backgroundColor: '#ff6f00', // Change to #ff6f00
+    borderBottomColor: 'white', 
+    backgroundColor: '#ff6f00', 
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: 'white', // Change to white
+    color: 'white',
   },
   closeButton: {
     padding: 10,
@@ -140,28 +146,28 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   imageContainer: {
-    width: 120, // Set a fixed width
-    height: 120, // Set a fixed height
+    width: 120, 
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden', // Ensures the image does not break out of the boundary
+    overflow: 'hidden',
   },
   badgeIcon: {
-    width: 120, // New uniform width for all badges
-    height: 120, // New uniform height for all badges
-    resizeMode: 'contain', // This can be 'contain' or 'cover' depending on the desired effect
+    width: 120, 
+    height: 120,
+    resizeMode: 'contain',
   },
   badgeTitle: {
-    fontSize: 20, // Increase font size
+    fontSize: 20, 
     fontWeight: 'bold',
-    color: '#ff6f00', // Keep this color or change as needed
+    color: '#ff6f00',
     textAlign: 'center',
     marginTop: 8,
   },
   badgeDescription: {
     textAlign: 'center',
-    color: '#ff6f00', // Change text color to #ff6f00
-    fontSize: 18, // Increase font size
+    color: '#ff6f00',
+    fontSize: 18,
     fontWeight: 'bold',
     marginTop: 4,
   },

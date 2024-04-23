@@ -1,3 +1,6 @@
+// Original white happy cat was gotten from https://www.rawpixel.com/image/6483701/png-sticker-public-domain
+// All other cat colours and moods were designed using Photoshop
+
 const petImages = {
   gingerHappy: require('../assets/images/ginger-happy-cat.png'),
   gingerSad: require('../assets/images/ginger-sad-cat.png'),

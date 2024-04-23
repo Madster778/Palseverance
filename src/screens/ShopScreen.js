@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, FlatList, Alert, Image } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
@@ -8,7 +11,7 @@ const ShopScreen = ({ navigation }) => {
   const [shopItems, setShopItems] = useState([]);
   const [userData, setUserData] = useState({ currency: 0, ownedItems: [], equippedItems: {} });
 
-  // Function to fetch user data
+  // Function to fetch the current user data from Firestore
   const fetchUserData = async () => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const docSnap = await getDoc(userRef);
@@ -19,6 +22,7 @@ const ShopScreen = ({ navigation }) => {
     }
   };
 
+  // useEffect hook to fetch shop items and user data on component mount.
   useEffect(() => {
     const fetchShopItems = async () => {
       const querySnapshot = await getDocs(collection(db, "ShopItems"));
@@ -37,12 +41,13 @@ const ShopScreen = ({ navigation }) => {
     fetchUserData();
   }, []);
 
+  // Function to format category names by inserting a space before capital letters and capitalizing the first letter.
   const formatCategoryName = (name) => {
-    const formatted = name.replace(/([A-Z])/g, ' $1'); // Inserts a space before capital letters
-    return formatted.charAt(0).toUpperCase() + formatted.slice(1); // Capitalizes the first letter
+    const formatted = name.replace(/([A-Z])/g, ' $1');
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1); 
   };
 
-  // Add this function within your ShopScreen component
+  // Function to update collector badges in response to new purchases, using a Firestore transaction for atomic updates.
   const updateCollectorBadge = async (newOwnedItems) => {
     const badgesRef = collection(db, 'Badges');
     const userRef = doc(db, 'Users', auth.currentUser.uid);
@@ -77,7 +82,7 @@ const ShopScreen = ({ navigation }) => {
     });
   };
 
-
+  // Function to handle purchasing or equipping items. Includes validation checks and updates Firestore documents accordingly.
   const handleBuyOrEquip = async (item) => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const isOwned = userData.ownedItems.includes(item.id);
@@ -126,7 +131,7 @@ const ShopScreen = ({ navigation }) => {
             updateObject = {'equippedItems.backgroundColour': 'lightgrey'};
         } else if (item.type === 'petColour' && isEquipped) {
             // Setting default pet colour when unequipping
-            updateObject = {'equippedItems.petColour': 'white'};
+            updateObject = {'equippedItems.petColour': 'grey'};
         } else if (isEquipped) {
             // Unequipping non-color items
             updateObject = {[`equippedItems.${item.type}`]: 'none'};
@@ -140,10 +145,12 @@ const ShopScreen = ({ navigation }) => {
     await fetchUserData(); // Refresh user data
   };
   
+  // Render function for shop items. Determines how each item in the shop is displayed, including its purchase and equip state.
   const renderItem = ({ item }) => {
     const isOwned = userData.ownedItems.includes(item.id);
     let isEquipped;
 
+    // Determines if the item is equipped based on type-specific logic.
     if (item.type === 'glasses') {
         isEquipped = userData.equippedItems.glasses;
     } else {
@@ -158,7 +165,7 @@ const ShopScreen = ({ navigation }) => {
         <FontAwesome 
           name="paint-brush" 
           size={24} 
-          color={color} // Use specific colors based on the item name
+          color={color}
           />
         );
         break;
@@ -167,7 +174,7 @@ const ShopScreen = ({ navigation }) => {
         <FontAwesome 
           name="paint-brush" 
           size={24} 
-          color={item.colourCode || 'black'} // This will use the color from the item object
+          color={item.colourCode || 'black'}
           />
         );
         break;
@@ -233,18 +240,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 3,
-    borderBottomColor: '#fff', // Change to white
-    backgroundColor: '#ff6f00', // Change to #ff6f00
+    borderBottomColor: 'white', 
+    backgroundColor: '#ff6f00',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff', // Change to white
+    color: 'white', 
   },
   currencyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff', // Also change the currency text color to white for consistency
+    color: 'white',
   },
   closeButton: {
     padding: 10,
@@ -264,40 +271,40 @@ const styles = StyleSheet.create({
   item: {
     backgroundColor: '#ff6f00',
     borderRadius: 10,
-    borderColor: 'white', // Set the border color to white
-    borderWidth: 3, // Set the border width, adjust as needed
-    padding: 8, // Slightly reduced padding
-    margin: 4, // Reduced margin to give more space
-    flex: 1 / 3, // Keeps 3 items per row
+    borderColor: 'white', 
+    borderWidth: 3, 
+    padding: 8, 
+    margin: 4,
+    flex: 1 / 3, 
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 160, // Adjust the minHeight to ensure items have enough space
+    minHeight: 160, 
   },
   itemName: {
-    fontSize: 18, // Increased font size
-    fontWeight: 'bold', // Make text bold
-    color: 'white', // Set text color to white
-    marginBottom: 8, // Increased space below the text
+    fontSize: 18,
+    fontWeight: 'bold', 
+    color: 'white',
+    marginBottom: 8,
   },
   button: {
     backgroundColor: '#e7e7e7',
-    paddingHorizontal: 12, // Reduced padding
-    paddingVertical: 6, // Reduced padding
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 5,
-    minWidth: 70, // Ensure a minimum width for the button
-    height: 30, // Set a fixed height to make sure it fits within the item container
-    justifyContent: 'center', // Centers text vertically
-    alignItems: 'center', // Centers text horizontally
+    minWidth: 70,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   buttonText: {
-    fontSize: 14, // Or any other size you previously set
-    textAlign: 'center', // Keeps text centered
-    color: 'white', // Changes text color to white
+    fontSize: 14,
+    textAlign: 'center',
+    color: 'white',
   },
   icon: {
-    width: 70, // Adjusted icon size to create more space
-    height: 70, // Adjusted icon size
-    marginBottom: 2, // Adjusted spacing
+    width: 70, 
+    height: 70,
+    marginBottom: 2,
   },
   buttonOwned: {
     backgroundColor: '#4CAF50',

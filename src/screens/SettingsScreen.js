@@ -1,19 +1,22 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Modal, Alert } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { auth, db } from '../firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { doc, updateDoc, onSnapshot, collection, query, getDocs, where } from 'firebase/firestore';
 
 const SettingsScreen = ({ navigation }) => {
-  const [musicEnabled, setMusicEnabled] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newPetName, setNewPetName] = useState('');
   const [currentUsername, setCurrentUsername] = useState('');
   const [currentPetName, setCurrentPetName] = useState('');
   const [backgroundColour, setBackgroundColour] = useState('lightgrey'); // For background color updates
 
+  // Listen for real-time updates to the user's document to maintain fresh state
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
@@ -23,15 +26,14 @@ const SettingsScreen = ({ navigation }) => {
           const userData = docSnap.data();
           setCurrentUsername(userData.username);
           setCurrentPetName(userData.petName);
-          setMusicEnabled(userData.settings?.musicEnabled || false);
-          setSoundEnabled(userData.settings?.soundEnabled || false);
-          setBackgroundColour(userData.equippedItems?.backgroundColour || 'white'); // Listen for real-time updates
+          setBackgroundColour(userData.equippedItems?.backgroundColour || 'lightgrey');
         }
       });
       return () => unsubscribe();
     }
   }, []);
 
+  // Function to handle field updates (username or pet name)
   const handleUpdateField = async (field, newValue, currentValue) => {
     // Regex to check if the name contains only letters and numbers
     const validNameRegex = /^[a-zA-Z0-9]+$/;
@@ -52,7 +54,6 @@ const SettingsScreen = ({ navigation }) => {
       Alert.alert("Invalid Input", "Name cannot be longer than 15 characters.");
       return;
     }
-    // If the field being updated is 'username', check if it's already taken
     if (field === 'username') {
       const usersRef = collection(db, 'Users');
       const querySnapshot = await getDocs(query(usersRef, where("username", "==", newValue.trim())));
@@ -62,7 +63,6 @@ const SettingsScreen = ({ navigation }) => {
         return;
       }
     }
-    // Proceed with updating the document
     const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(db, 'Users', user.uid);
@@ -77,12 +77,9 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  const handleToggleSetting = async (setting, value) => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocRef = doc(db, 'Users', user.uid);
-      await updateDoc(userDocRef, { [`settings.${setting}`]: value });
-    }
+  // Function to display credits in a styled modal view
+  const handleShowCredits = () => {
+    setModalVisible(true);
   };
 
   const handleSignOut = async () => {
@@ -92,10 +89,6 @@ const SettingsScreen = ({ navigation }) => {
     } catch (error) {
       Alert.alert("Sign Out Error", error.message);
     }
-  };
-
-  const handleShowCredits = () => {
-    Alert.alert("Credits", "App created by Your Name. Icons provided by Icon Provider.");
   };
 
   return (
@@ -108,34 +101,10 @@ const SettingsScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.switchContainer}>
-          <Text style={styles.labelBold}>Music</Text>
-          <Switch
-            value={musicEnabled}
-            onValueChange={(value) => {
-              setMusicEnabled(value);
-              handleToggleSetting('musicEnabled', value);
-            }}
-            trackColor={{ false: "#ff0000", true: "#00ff00" }} // Red for false, green for true
-          />
-        </View>
-
-        <View style={styles.switchContainer}>
-          <Text style={styles.labelBold}>Sound Effects</Text>
-          <Switch
-            value={soundEnabled}
-            onValueChange={(value) => {
-              setSoundEnabled(value);
-              handleToggleSetting('soundEnabled', value);
-            }}
-            trackColor={{ false: "#ff0000", true: "#00ff00" }} // Red for false, green for true
-          />
-        </View>
-
         <TextInput
           style={styles.input}
           placeholder="New Username"
-          placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
+          placeholderTextColor="#ff6f00"
           value={newUsername}
           onChangeText={setNewUsername}
         />
@@ -146,7 +115,7 @@ const SettingsScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="New Pet Name"
-          placeholderTextColor="#ff6f00" // Ensure placeholder text is legible
+          placeholderTextColor="#ff6f00"
           value={newPetName}
           onChangeText={setNewPetName}
         />
@@ -162,6 +131,24 @@ const SettingsScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+        transparent={true}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Credits</Text>
+            <AntDesign name="closecircleo" size={24} color="white" onPress={() => setModalVisible(false)} style={styles.modalCloseButton} />
+            <Text style={styles.modalText}>App Designed by Mohammed Alom</Text>
+            <Text style={styles.modalText}>App Created by Mohammed Alom</Text>
+
+          </View>
+        </View>
+      </Modal>
+      
     </SafeAreaView>
   );
 };
@@ -169,7 +156,6 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // No changes needed here since background color changes dynamically
   },
   header: {
     flexDirection: 'row',
@@ -177,15 +163,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 18,
     borderBottomWidth: 3,
-    borderBottomColor: '#fff', // Change to white to match the header background
-    backgroundColor: '#ff6f00', // Change to #ff6f00
+    borderBottomColor: 'white', 
+    backgroundColor: '#ff6f00', 
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: '#fff', // Change text color to white
+    color: 'white',
   },
   closeButton: {
     position: 'absolute',
@@ -205,7 +191,7 @@ const styles = StyleSheet.create({
   labelBold: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#ff6f00', // Change text color to white
+    color: '#ff6f00', 
   },
   input: {
     fontSize: 16,
@@ -218,7 +204,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   button: {
-    backgroundColor: '#ff6f00', // Change button background color
+    backgroundColor: '#ff6f00',
     paddingVertical: 10,
     alignItems: 'center',
     borderRadius: 5,
@@ -227,8 +213,46 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white', // Ensure text color is white
+    color: 'white', 
   },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: '#ff6f00',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    borderColor: 'white',
+    borderWidth: 3
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 15
+  },
+  modalText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 16
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10
+  }
 });
 
 export default SettingsScreen;

@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,7 +41,7 @@ const MessageScreen = ({ navigation, route }) => {
         setBackgroundColor(userData.equippedItems?.backgroundColour || 'lightgrey');
       } else {
         console.error('User document does not exist!');
-        setBackgroundColor('lightgrey'); // Fall back to a default if the user doc doesn't exist
+        setBackgroundColor('lightgrey');
       }
     });
   
@@ -50,6 +53,7 @@ const MessageScreen = ({ navigation, route }) => {
     navigation.navigate('Profile', { userId: friendUserId });
   };
 
+  // Function for users to send messages
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
@@ -68,7 +72,7 @@ const MessageScreen = ({ navigation, route }) => {
     ]}>
       <Text style={[
         item.senderID === auth.currentUser.uid ? styles.myMessageText : styles.friendMessageText,
-        styles.messageText, // Apply this last to keep common styles
+        styles.messageText,
       ]}>
         {item.text}
       </Text>
@@ -107,9 +111,9 @@ const MessageScreen = ({ navigation, route }) => {
             style={styles.input}
             placeholder="Type a message..."
             placeholderTextColor="#ff6f00"
-            multiline={true} // Allows for multiple lines
-            minHeight={40} // Minimum height for the TextInput
-            maxHeight={120} // Maximum height for the TextInput to expand
+            multiline={true} 
+            minHeight={40} 
+            maxHeight={120}
           />
           <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
             <Ionicons name="send" size={24} color="#ff6f00" />
@@ -131,11 +135,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start', // Aligns items to the start, which gives space for the back button on the left
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 10, // Increase padding top for Android status bar plus some extra space
+    justifyContent: 'flex-start', 
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 10, 
     paddingHorizontal: 10,
     paddingBottom: 10,
-    backgroundColor: '#ff6f00', // Theme color for the header
+    backgroundColor: '#ff6f00', 
     borderBottomWidth: 3,
     borderBottomColor: 'white',
   },
@@ -166,13 +170,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff6f00',
     alignSelf: 'flex-end',
     marginRight: 8,
-    borderBottomRightRadius: 0, // Speech bubble effect for my message
+    borderBottomRightRadius: 0,
   },
   friendMessage: {
     backgroundColor: 'white',
     alignSelf: 'flex-start',
     marginLeft: 8,
-    borderBottomLeftRadius: 0, // Speech bubble effect for friend's message
+    borderBottomLeftRadius: 0, 
   },
   messageText: {
     fontSize: 16,
@@ -192,8 +196,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 10,
     borderTopWidth: 3,
-    borderTopColor: 'white', // Border color for input container
-    backgroundColor: '#ff6f00', // Background of the input area
+    borderTopColor: 'white',
+    backgroundColor: '#ff6f00', 
   },
   input: {
     flex: 1,
@@ -202,10 +206,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 20,
     marginRight: 10,
-    color: '#ff6f00', // Text color inside the input
+    color: '#ff6f00',
   },
   sendButton: {
-    backgroundColor: 'white', // Send button background color
+    backgroundColor: 'white',
     padding: 10,
     borderRadius: 50,
     justifyContent: 'center',

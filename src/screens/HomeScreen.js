@@ -1,3 +1,6 @@
+// Reference React Native Expo documentation: https://docs.expo.dev
+// Reference Firebase documentation: https://firebase.google.com/docs
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,7 +18,7 @@ function HomeScreen({ navigation }) {
   const [hasGlasses, setHasGlasses] = useState(false);
   const [buttonsPressed, setButtonsPressed] = useState({});
 
-
+  // Real-time data fetch from Firestore when component mounts
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
@@ -23,9 +26,9 @@ function HomeScreen({ navigation }) {
       const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          setUsername(userData.username); // Assuming username is always set
-          setPetName(userData.petName); // Assuming petName is always set
-          setHappinessLevel(userData.happinessMeter); // Assuming happinessMeter is always set
+          setUsername(userData.username); 
+          setPetName(userData.petName); 
+          setHappinessLevel(userData.happinessMeter); 
           setPetColor(userData.equippedItems?.petColour);
           setBackgroundColour(userData.equippedItems?.backgroundColour);
           setHasGlasses(userData.equippedItems?.glasses);
@@ -51,6 +54,7 @@ function HomeScreen({ navigation }) {
     }
   };
 
+  // Calculate pet mood and select the correct image source based on the pet's current mood and color
   const petMood = getPetMood().toLowerCase();
   const petImageKey = `${petColor}${petMood.charAt(0).toUpperCase() + petMood.slice(1)}`;
   const petImageSrc = petImages[petImageKey];
@@ -80,7 +84,7 @@ function HomeScreen({ navigation }) {
                   backgroundColor: getPetMoodColor(),
                   height: `${happinessLevel}%`,
                   position: 'absolute',
-                  bottom: 0, // This ensures the bar grows upwards from the bottom
+                  bottom: 0,
                 }
               ]} />
             </View>
@@ -88,9 +92,9 @@ function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.buttonContainer}>
-        {['Habits', 'Badges', 'Shop', 'Inbox', 'Rank'].map((screen, index) => (
+        {['Habits', 'Badges', 'Shop', 'Inbox', 'Rank'].map((screen) => (
           <TouchableOpacity
-            key={screen} // Assuming 'screen' is unique for each button
+            key={screen} 
             style={[styles.navButton, buttonsPressed[screen] ? styles.navButtonPressed : {}]}
             onPressIn={() => setButtonsPressed(prevState => ({ ...prevState, [screen]: true }))}
             onPressOut={() => setButtonsPressed(prevState => ({ ...prevState, [screen]: false }))}
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: '#ff6f00', // Change text color to #ff6f00
+    color: '#ff6f00',
   },
   petSection: {
     flex: 1,
@@ -138,10 +142,10 @@ const styles = StyleSheet.create({
   },
   glassesImage: {
     position: 'absolute',
-    width: 400, // Adjust as necessary
+    width: 400,
     height: 350,
     resizeMode: 'contain',
-    right: -35, // Move to the right side
+    right: -35,
     bottom: 55,
     marginTop: 10,
   },
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: -20,
     textAlign: 'center',
-    color: '#ff6f00', // Change text color to #ff6f00
+    color: '#ff6f00',
     marginLeft: 20,
   },
   happinessBarBorder: {
@@ -165,9 +169,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   happinessBarBackground: {
-    backgroundColor: 'white', // This ensures the background is white
+    backgroundColor: 'white', 
     width: '100%',
-    height: '100%', // This fills the entire border
+    height: '100%', 
   },
   happinessBar: {
     width: '100%',
@@ -178,7 +182,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   navButton: {
-    backgroundColor: '#ff6f00', // Change background color to #ff6f00
+    backgroundColor: '#ff6f00', 
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
@@ -187,12 +191,12 @@ const styles = StyleSheet.create({
     width: 75,
   },
   navButtonPressed: {
-    backgroundColor: '#e65c00', // A darker shade when button is pressed
+    backgroundColor: '#e65c00', 
   },
   navButtonText: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: 'white', // Keep text color white
+    color: 'white', 
   },
 });
 
