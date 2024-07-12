@@ -15,7 +15,8 @@ function HomeScreen({ navigation }) {
   const [happinessLevel, setHappinessLevel] = useState(100);
   const [petColor, setPetColor] = useState('grey');
   const [backgroundColour, setBackgroundColour] = useState('lightgrey');
-  const [hasGlasses, setHasGlasses] = useState(false);
+  const [glasses, setGlasses] = useState('');
+  const [hat, setHat] = useState('');
   const [buttonsPressed, setButtonsPressed] = useState({});
 
   // Real-time data fetch from Firestore when component mounts
@@ -31,7 +32,8 @@ function HomeScreen({ navigation }) {
           setHappinessLevel(userData.happinessMeter); 
           setPetColor(userData.equippedItems?.petColour);
           setBackgroundColour(userData.equippedItems?.backgroundColour);
-          setHasGlasses(userData.equippedItems?.glasses);
+          setGlasses(userData.equippedItems?.glasses);
+          setHat(userData.equippedItems?.hat);
         }
       });
       return () => unsubscribe();
@@ -59,10 +61,22 @@ function HomeScreen({ navigation }) {
   const petImageKey = `${petColor}${petMood.charAt(0).toUpperCase() + petMood.slice(1)}`;
   const petImageSrc = petImages[petImageKey];
 
+  // Select glasses image based on equipped glasses
+  const glassesImageKey = glasses
+    ? `glasses${glasses.charAt(0).toUpperCase() + glasses.slice(1)}`
+    : null;
+  const glassesImageSrc = glassesImageKey ? petImages[glassesImageKey] : null;
+
+  // Select hat image based on equipped hat
+  const hatImageKey = hat
+    ? `hat${hat.charAt(0).toUpperCase() + hat.slice(1)}`
+    : null;
+  const hatImageSrc = hatImageKey ? petImages[hatImageKey] : null;
+
   return (
-    <SafeAreaView style={[styles.container, {backgroundColor: backgroundColour}]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: backgroundColour }]}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.usernameButton}>
           <Text style={styles.username}>{username}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.closeButton}>
@@ -73,7 +87,12 @@ function HomeScreen({ navigation }) {
       <View style={styles.petSection}>
         <View style={styles.petImageContainer}>
           <Image source={petImageSrc} style={styles.petImage} />
-          {hasGlasses && <Image source={petImages.glassesOverlay} style={styles.glassesImage} />}
+          {hatImageSrc && (
+            <Image source={hatImageSrc} style={styles.hatImage} />
+          )}
+          {glassesImageSrc && (
+            <Image source={glassesImageSrc} style={styles.glassesImage} />
+          )}
         </View>
         <Text style={styles.petName}>{petName}</Text>
         <View style={styles.happinessBarBorder}>
@@ -120,6 +139,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 1,
   },
+  usernameButton: {
+    zIndex: 10,
+  },
+  closeButton: {
+    zIndex: 10,
+  },
   username: {
     fontSize: 40,
     fontWeight: 'bold',
@@ -140,14 +165,22 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginLeft: 20,
   },
+  hatImage: {
+    position: 'absolute',
+    width: 330,
+    resizeMode: 'contain',
+    top: -410,
+    right: 0,
+    zIndex: 1,
+  },
   glassesImage: {
     position: 'absolute',
-    width: 400,
-    height: 350,
+    width: 330,
+    height: 430,
     resizeMode: 'contain',
-    right: -35,
+    right: -1,
     bottom: 55,
-    marginTop: 10,
+    zIndex: 0,
   },
   petName: {
     fontSize: 40,

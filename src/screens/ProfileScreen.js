@@ -42,6 +42,18 @@ const ProfileScreen = ({ navigation, route }) => {
     : 'whiteHappy';
   const petImageSrc = petImages[petColorKey];
 
+  // Select glasses image based on equipped glasses
+  const glassesImageKey = userData.equippedItems?.glasses
+    ? `glasses${userData.equippedItems.glasses.charAt(0).toUpperCase() + userData.equippedItems.glasses.slice(1)}`
+    : null;
+  const glassesImageSrc = glassesImageKey ? petImages[glassesImageKey] : null;
+
+  // Select hat image based on equipped hat
+  const hatImageKey = userData.equippedItems?.hat
+    ? `hat${userData.equippedItems.hat.charAt(0).toUpperCase() + userData.equippedItems.hat.slice(1)}`
+    : null;
+  const hatImageSrc = hatImageKey ? petImages[hatImageKey] : null;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: userData.equippedItems?.backgroundColour || 'white' }]}>
       <View style={[styles.header, { marginTop: StatusBar.currentHeight }]}>
@@ -52,11 +64,13 @@ const ProfileScreen = ({ navigation, route }) => {
       </View>
 
       <View style={styles.profileContent}>
-        <Text style={styles.infoText}>{`${userData.firstName} ${userData.lastName}`}</Text>
         <View style={styles.petImageContainer}>
           <Image source={petImageSrc} style={styles.petImage} />
-          {userData.equippedItems?.glasses && (
-            <Image source={petImages.glassesOverlay} style={styles.glassesImage} />
+          {hatImageSrc && (
+            <Image source={hatImageSrc} style={styles.hatImage} />
+          )}
+          {glassesImageSrc && (
+            <Image source={glassesImageSrc} style={styles.glassesImage} />
           )}
         </View>
         <Text style={styles.infoText}>{`Pet Name: ${userData.petName}`}</Text>
@@ -106,20 +120,29 @@ const styles = StyleSheet.create({
     height: 300,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden', 
+    overflow: 'visible', // Ensure the hat is not cut off
+    marginBottom: 20, // Add some space between the pet image and the stats
   },
   petImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'contain',
   },
+  hatImage: {
+    position: 'absolute',
+    width: 300,
+    resizeMode: 'contain',
+    top: -460,
+    zIndex: 1, // Ensure hat is in front
+  },
   glassesImage: {
     position: 'absolute',
-    width: 330, 
-    height: 500,
+    width: 300, 
+    height: 430,
     resizeMode: 'contain',
-    top: -110,
-    left: -15,
+    top: -115,
+    right: -1,
+    zIndex: 0, // Ensure glasses are behind the hat
   },
   infoText: {
     fontSize: 22,

@@ -2,6 +2,7 @@
 // All other cat colours and moods were designed using Photoshop
 
 const petImages = {
+  // Pet colours and mood
   gingerHappy: require('../assets/images/ginger-happy-cat.png'),
   gingerSad: require('../assets/images/ginger-sad-cat.png'),
   gingerNeutral: require(`../assets/images/ginger-neutral-cat.png`),
@@ -14,9 +15,13 @@ const petImages = {
   blackHappy: require('../assets/images/black-happy-cat.png'),
   blackSad: require('../assets/images/black-sad-cat.png'),
   blackNeutral: require('../assets/images/black-neutral-cat.png'),
-    // If you have glasses as an overlay, consider adding it here as well
-    glassesOverlay: require('../assets/images/glasses-overlay.png'),
-  };
-  
-  export default petImages;
-  
+  // Accessories
+  glassesBlack: require('../assets/images/glasses-black.png'),
+  glassesPink: require('../assets/images/glasses-pink.png'),
+  glassesRed: require('../assets/images/glasses-red.png'),
+  hatStraw: require('../assets/images/hat-straw.png'),
+  hatTop: require('../assets/images/hat-top.png'),
+  hatCowboy: require('../assets/images/hat-cowboy.png'),
+};
+
+export default petImages;

@@ -11,7 +11,7 @@ import { doc, getDoc } from 'firebase/firestore';
 const RankScreen = ({ navigation }) => {
   const [rankingData, setRankingData] = useState([]);
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
-  const [backgroundColor, setBackgroundColor] = useState('lightgrey');;
+  const [backgroundColor, setBackgroundColor] = useState('lightgrey');
 
   const statTypes = ['longestCurrentStreak', 'longestObtainedStreak', 'totalCurrencyEarned'];
 
@@ -21,8 +21,7 @@ const RankScreen = ({ navigation }) => {
       const docSnap = await getDoc(userRef);
 
       if (docSnap.exists()) {
-        // Assuming 'equippedItems.backgroundColour' is the path where the background color is stored
-        setBackgroundColor(docSnap.data().equippedItems.backgroundColour);
+        setBackgroundColor(docSnap.data().equippedItems?.backgroundColour || 'lightgrey');
       } else {
         console.log("User document not found!");
       }
@@ -81,21 +80,21 @@ const RankScreen = ({ navigation }) => {
 
   // Renders individual rank items, navigable to user profiles
   const RankItem = ({ id, rank, username, currentStreak, longestStreak, currencyEarned }) => (
-  <TouchableOpacity
-    style={styles.rankItem}
-    onPress={() => navigation.navigate('Profile', { userId: id })}
-  >
-    <View style={styles.rankCircle}>
-      <Text style={styles.rankNumber}>{rank}</Text>
-    </View>
-    <Text style={styles.rankName}>{username}</Text>
-    <Text style={styles.rankStat}>
-      {selectedTabIndex === 0 && `${currentStreak} Days`}
-      {selectedTabIndex === 1 && `${longestStreak} Days`}
-      {selectedTabIndex === 2 && `${currencyEarned} Coins`}
-    </Text>
-  </TouchableOpacity>
-);
+    <TouchableOpacity
+      style={styles.rankItem}
+      onPress={() => navigation.navigate('Profile', { userId: id })}
+    >
+      <View style={styles.rankCircle}>
+        <Text style={styles.rankNumber}>{rank}</Text>
+      </View>
+      <Text style={styles.rankName}>{username}</Text>
+      <Text style={styles.rankStat}>
+        {selectedTabIndex === 0 && `${currentStreak} Days`}
+        {selectedTabIndex === 1 && `${longestStreak} Days`}
+        {selectedTabIndex === 2 && `${currencyEarned} Coins`}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: backgroundColor }]}>
