@@ -6,13 +6,12 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Flat
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { db, auth } from '../firebase/firebaseConfig';
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
-import petImages from '../utils/petImages'; // Import pet images
+import petImages from '../utils/petImages';
 
 const ShopScreen = ({ navigation }) => {
   const [shopItems, setShopItems] = useState([]);
   const [userData, setUserData] = useState({ currency: 0, ownedItems: [], equippedItems: {} });
 
-  // Function to fetch the current user data from Firestore
   const fetchUserData = async () => {
     const userRef = doc(db, "Users", auth.currentUser.uid);
     const docSnap = await getDoc(userRef);
@@ -269,32 +268,32 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   categoryContainer: {
-    padding: 5, // Reduced padding
+    padding: 5,
   },
   categoryTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 5, // Reduced margin
+    marginBottom: 5,
     color: '#ff6f00',
   },
   list: {
-    padding: 5, // Reduced padding
+    padding: 5,
   },
   item: {
     backgroundColor: '#ff6f00',
     borderRadius: 10,
-    borderColor: 'white', 
-    borderWidth: 3, 
-    padding: 8, 
+    borderColor: 'white',
+    borderWidth: 3,
+    padding: 8,
     margin: 4,
-    flex: 1 / 3, 
+    flex: 1 / 3,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 160, 
+    minHeight: 160,
   },
   itemName: {
     fontSize: 18,
-    fontWeight: 'bold', 
+    fontWeight: 'bold',
     color: 'white',
     marginBottom: 8,
   },
@@ -315,9 +314,9 @@ const styles = StyleSheet.create({
   },
   icon: {
     width: 50, 
-    height: 50, // Reduced size for better fit
+    height: 50,
     marginBottom: 2,
-    resizeMode: 'contain', // Ensure the whole image fits
+    resizeMode: 'contain',
   },
   iconPlaceholder: {
     width: 70,
@@ -334,7 +333,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f44336',
   },
   flatListContent: {
-    paddingBottom: 10, // Reduced padding
+    paddingBottom: 10,
   },
 });
 

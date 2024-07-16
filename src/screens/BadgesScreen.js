@@ -36,7 +36,6 @@ const BadgesScreen = ({ navigation }) => {
     }
 
     const userData = userSnap.data();
-    //console.log(`User data: ${JSON.stringify(userData)}`);
     
     if (!userData.badges) {
       console.log('User has no badges field.');
@@ -46,13 +45,11 @@ const BadgesScreen = ({ navigation }) => {
     // Fetch details for each badge
     const badgesDetails = await Promise.all(
       userData.badges.map(async (userBadge) => {
-        //console.log(`Fetching badge with ID: ${userBadge.badgeId}`);
         const badgeRef = doc(db, 'Badges', userBadge.badgeId);
         const badgeSnap = await getDoc(badgeRef);
         
         if (badgeSnap.exists()) {
           const badgeData = badgeSnap.data();
-          //console.log(`Badge data: ${JSON.stringify(badgeData)}`);
           const tierInfo = badgeData.tiers.find(tier => tier.tier === userBadge.highestTierAchieved);
           
           return {
@@ -63,13 +60,10 @@ const BadgesScreen = ({ navigation }) => {
             imageURL: tierInfo.imageURL,
           };
         } else {
-          //console.log(`No badge found with ID: ${userBadge.badgeId}`);
           return null;
         }
       })
     );
-
-    //console.log(`Badges details fetched: ${JSON.stringify(badgesDetails)}`);
     return badgesDetails.filter(badge => badge !== null);
   };
 

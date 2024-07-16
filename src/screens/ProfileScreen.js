@@ -20,7 +20,6 @@ const ProfileScreen = ({ navigation, route }) => {
         if (docSnap.exists()) {
           setUserData(docSnap.data());
         } else {
-          // Handle case where user data does not exist (e.g., invalid userId)
           console.log("No user data found.");
         }
       });
@@ -120,8 +119,8 @@ const styles = StyleSheet.create({
     height: 300,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'visible', // Ensure the hat is not cut off
-    marginBottom: 20, // Add some space between the pet image and the stats
+    overflow: 'visible',
+    marginBottom: 20,
   },
   petImage: {
     width: '100%',
@@ -133,7 +132,7 @@ const styles = StyleSheet.create({
     width: 300,
     resizeMode: 'contain',
     top: -460,
-    zIndex: 1, // Ensure hat is in front
+    zIndex: 1,
   },
   glassesImage: {
     position: 'absolute',
@@ -142,7 +141,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     top: -115,
     right: -1,
-    zIndex: 0, // Ensure glasses are behind the hat
+    zIndex: 0,
   },
   infoText: {
     fontSize: 22,

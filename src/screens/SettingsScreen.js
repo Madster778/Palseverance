@@ -14,9 +14,8 @@ const SettingsScreen = ({ navigation }) => {
   const [newPetName, setNewPetName] = useState('');
   const [currentUsername, setCurrentUsername] = useState('');
   const [currentPetName, setCurrentPetName] = useState('');
-  const [backgroundColour, setBackgroundColour] = useState('lightgrey'); // For background color updates
+  const [backgroundColour, setBackgroundColour] = useState('lightgrey');
 
-  // Listen for real-time updates to the user's document to maintain fresh state
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
@@ -77,7 +76,6 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  // Function to display credits in a styled modal view
   const handleShowCredits = () => {
     setModalVisible(true);
   };

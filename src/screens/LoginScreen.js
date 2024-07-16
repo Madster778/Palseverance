@@ -55,7 +55,8 @@ function LoginScreen({ navigation }) {
               equippedItems: {
                 backgroundColour: 'lightgrey',
                 petColour: 'grey',
-                glasses: false,
+                glasses: 'none',
+                hat: 'none'
               },
               incomingRequests: [],
               outgoingRequests: []
@@ -79,7 +80,7 @@ function LoginScreen({ navigation }) {
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.tagline}>Tracking Habits with Purr-fection!</Text>
+      <Text style={styles.tagline}>Tracking Habits with Pal-tastic Results!</Text>
       {isLoading ? (
         <ActivityIndicator size="large" color="#ff6f00" />
       ) : (

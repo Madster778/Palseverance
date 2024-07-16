@@ -159,6 +159,10 @@ const HabitsScreen = ({ navigation }) => {
         }
       }
 
+      // Update longest current streak and longest obtained streak
+      const longestCurrentStreak = Math.max(newStreak, userDoc.data().longestCurrentStreak || 0);
+      const longestObtainedStreak = Math.max(newStreak, userDoc.data().longestObtainedStreak || 0);
+
       transaction.update(habitRef, {
         streak: newStreak,
         status: "complete",
@@ -169,12 +173,13 @@ const HabitsScreen = ({ navigation }) => {
         currency: newCurrency,
         happinessMeter: newHappiness,
         totalCurrencyEarned: totalCurrencyEarned,
-        badges: userBadges
+        badges: userBadges,
+        longestCurrentStreak: longestCurrentStreak,
+        longestObtainedStreak: longestObtainedStreak
       });
     });
   };
 
-  // Function to delete a habit from Firestore.
   const deleteHabit = async (habitId) => {
     Alert.alert('Delete Habit', 'Are you sure you want to delete this habit?', [
       { text: 'Cancel' },

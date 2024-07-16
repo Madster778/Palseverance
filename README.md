@@ -70,3 +70,72 @@ npx expo start --dev-client
 ```
 
 - Press 'a' to open the app on the Android emulator.
+
+## Directory Structure
+
+```
+Palseverance/
+├── .expo/                      # Expo configuration directory
+├── %ProgramData%/              # System-specific configuration
+├── functions/                  # Firebase cloud functions
+│   ├── node_modules/
+│   ├── .gitignore
+│   ├── index.js                # Firestore cloud functions
+│   ├── package-lock.json
+│   └── package.json            # Firestore cloud function dependencies and scripts
+├── node_modules/
+├── src/
+│   ├── assets/
+│   │   ├── images/
+│   │   │   ├── black-happy-cat.png
+│   │   │   ├── black-neutral-cat.png
+│   │   │   ├── black-sad-cat.png
+│   │   │   ├── ginger-happy-cat.png
+│   │   │   ├── ginger-neutral-cat.png
+│   │   │   ├── ginger-sad-cat.png
+│   │   │   ├── grey-happy-cat.png
+│   │   │   ├── grey-neutral-cat.png
+│   │   │   ├── grey-sad-cat.png
+│   │   │   ├── white-happy-cat.png
+│   │   │   ├── white-neutral-cat.png
+│   │   │   ├── white-sad-cat.png
+│   │   │   ├── glasses-black.png
+│   │   │   ├── glasses-pink.png
+│   │   │   ├── glasses-red.png
+│   │   │   ├── hat-cowboy.png
+│   │   │   ├── hat-straw.png
+│   │   │   ├── hat-top.png
+│   │   │   ├── palseverance-logo.png
+│   │   ├── adaptive-icon.png
+│   │   ├── favicon.png
+│   │   ├── icon.png
+│   │   └── splash.png
+│   ├── firebase/
+│   │   └── firebaseConfig.js   # Firebase configuration
+│   ├── screens/
+│   │   ├── BadgeScreen.js
+│   │   ├── HabitsScreen.js
+│   │   ├── HomeScreen.js
+│   │   ├── InboxScreen.js
+│   │   ├── LoginScreen.js
+│   │   ├── MessageScreen.js
+│   │   ├── ProfileScreen.js
+│   │   ├── RankScreen.js
+│   │   ├── SettingsScreen.js
+│   │   └── ShopScreen.js
+│   └── utils/
+│       └── petImages.js        # Pet images and accessories
+├── .firebaserc                 # Firebase project configuration
+├── .gitignore
+├── App.js                      # Entry point for the React Native application
+├── app.json                    # Expo configuration file
+├── babel.config.js             # Babel configuration file
+├── eas.json                    # Expo Application Services configuration
+├── firebase.json               # Firebase service configuration
+├── firestore.rules             # Firestore security rules
+├── google-services.json        # Firebase configuration file
+├── metro.config.js             # Metro bundler configuration file
+├── package-lock.json
+├── package.json                # Main project dependencies and scripts
+└── README.md                   # Readme file with instructions and structure
+```

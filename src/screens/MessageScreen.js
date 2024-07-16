@@ -22,7 +22,6 @@ const MessageScreen = ({ navigation, route }) => {
             id: doc.id,
             ...doc.data(),
           }))
-          // Filter out any messages that don't have a valid timestamp
           .filter(msg => msg.timestamp && typeof msg.timestamp.seconds === 'number')
           .sort((a, b) => b.timestamp.seconds - a.timestamp.seconds);
         setMessages(loadedMessages);
