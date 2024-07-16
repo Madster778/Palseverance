@@ -10,10 +10,11 @@ Habit-tracker application with a virtual pet used as an incentive. Users can cus
 
 Before you begin, ensure you have met the following requirements:
 
-- Node.js (LTS version recommended)
-- npm (comes bundled with Node.js)
-- Expo CLI
-- Android Studio for the Android emulator (to run the app on an Android virtual device)
+- **Node.js** (LTS version recommended)
+- **npm** (comes bundled with Node.js)
+- **Expo CLI**
+- **Android Studio** for the Android emulator (to run the app on an Android virtual device)
+- **Android Platform Tools** (for ADB)
 
 Node.js and npm can be downloaded from the [Node.js official website](https://nodejs.org/).
 
@@ -30,6 +31,29 @@ npm install -g eas-cli
 ```
 
 Make sure Android Studio is installed on your computer. You can download it from [Android Studio's official website](https://developer.android.com/studio).
+
+To install Android Platform Tools:
+
+1. **Download the Android SDK Platform Tools** from the [Android developer website](https://developer.android.com/studio#command-tools).
+2. **Extract the downloaded zip file** to a location of your choice.
+3. **Add the extracted directory to your system PATH:**
+
+   - **Windows:**
+
+     1. Open the Start Search, type in "env", and select "Edit the system environment variables."
+     2. In the System Properties window, click on the "Environment Variables" button.
+     3. In the Environment Variables window, under "System variables," find the `Path` variable, select it, and click "Edit."
+     4. Click "New" and add the path to the extracted platform-tools directory.
+     5. Click OK to save the changes and close all windows.
+
+   - **macOS and Linux:**
+     1. Open a terminal window.
+     2. Open your shell profile file in a text editor (`~/.bash_profile`, `~/.zshrc`, or `~/.profile`).
+     3. Add the following line to the file:
+        ```bash
+        export PATH=$PATH:/path/to/extracted/platform-tools
+        ```
+     4. Save the file and run `source ~/.bash_profile` or the equivalent for your shell.
 
 ## Installation
 
