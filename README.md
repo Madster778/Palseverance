@@ -23,6 +23,12 @@ To install Expo CLI, run the following command in your terminal:
 npm install -g expo-cli
 ```
 
+To install Expo Application Services (EAS), run the following command in your terminal:
+
+```bash
+npm install -g eas-cli
+```
+
 Make sure Android Studio is installed on your computer. You can download it from [Android Studio's official website](https://developer.android.com/studio).
 
 ## Installation
